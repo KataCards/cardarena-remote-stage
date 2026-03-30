@@ -3,7 +3,6 @@ from pydantic import Field
 from typing import List
 import os
 
-from lib.browser_engine.browser_types import BrowserType
 from utils.logging.log_levels import LogLevel
 
 class BaseKioskConfig(BaseSettings):
@@ -29,7 +28,7 @@ class BaseKioskConfig(BaseSettings):
     environment: str = "local"
     
     # Browser settings
-    browser_type: BrowserType = BrowserType.CHROMIUM
+    browser_type: str = "CHROMIUM"
     headless: bool = False
     
     # Kiosk mode settings
