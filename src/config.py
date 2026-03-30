@@ -1,19 +1,10 @@
-from lib.browser_engine.browser_types import BrowserType
-from utils.logging.log_levels import LogLevel
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, field_validator
-from __future__ import annotations
-from typing import List, Union
-from enum import Enum
+from pydantic import Field
+from typing import List
 import os
 
-class Environment(str, Enum):
-    """Supported deployment environments."""
-    
-    LOCAL = "local"
-    STAGING = "staging"
-    PRODUCTION = "production"
-
+from lib.browser_engine.browser_types import BrowserType
+from utils.logging.log_levels import LogLevel
 
 class BaseKioskConfig(BaseSettings):
     """Base configuration class with common settings for all environments.
@@ -24,29 +15,6 @@ class BaseKioskConfig(BaseSettings):
     
     All configuration values can be overridden via environment variables or .env file.
     Environment variables are case-insensitive and will be automatically loaded.
-    
-    Attributes:
-        environment: Current deployment environment (local/staging/production)
-        browser_type: Browser engine to use (chromium/chrome/msedge)
-        headless: Whether to run browser without GUI
-        kiosk_mode: Enable full-screen kiosk mode
-        start_url: Initial URL to load on browser start
-        window_width: Browser window width in pixels (minimum 800)
-        window_height: Browser window height in pixels (minimum 600)
-        enable_rotation: Enable automatic tab rotation through URLs
-        rotation_urls: List of URLs to cycle through when rotation is enabled
-        rotation_interval: Seconds between automatic tab switches (minimum 5)
-        disable_infobars: Hide Chrome information bars
-        disable_notifications: Block browser notification prompts
-        disable_session_restore: Prevent session restore dialogs
-        disable_gpu: Disable GPU acceleration (useful for headless/embedded systems)
-        disable_dev_shm: Disable /dev/shm usage (useful for Docker/limited memory)
-        page_load_timeout: Maximum time to wait for page load in milliseconds
-        navigation_timeout: Maximum time to wait for navigation in milliseconds
-        auto_restart_on_crash: Automatically restart browser on crash
-        max_restart_attempts: Maximum consecutive restart attempts before giving up
-        log_level: Application logging verbosity level
-        enable_console_logging: Log browser console messages to application logs
     """
     
     model_config = SettingsConfigDict(
@@ -58,7 +26,7 @@ class BaseKioskConfig(BaseSettings):
     )
     
     # Environment
-    environment: Environment = Environment.LOCAL
+    environment: str = "local"
     
     # Browser settings
     browser_type: BrowserType = BrowserType.CHROMIUM
@@ -95,105 +63,8 @@ class BaseKioskConfig(BaseSettings):
     max_restart_attempts: int = Field(default=3, ge=1)
     
     # Logging
-    log_level: LogLevel = LogLevel.INFO
+    log_level: LogLevel = LogLevel.INFORMATIONAL
     enable_console_logging: bool = True
-    
-    @field_validator("rotation_urls", mode="before")
-    @classmethod
-    def parse_rotation_urls(cls, v: Union[str, List[str]]) -> List[str]:
-        """Parse rotation URLs from comma-separated string or list.
-        
-        Args:
-            v: Either a comma-separated string of URLs or a list of URL strings
-            
-        Returns:
-            List of URL strings with whitespace stripped
-            
-        Example:
-            >>> parse_rotation_urls("https://a.com, https://b.com")
-            ['https://a.com', 'https://b.com']
-        """
-        if isinstance(v, str):
-            return [url.strip() for url in v.split(",") if url.strip()]
-        return v
-    
-    def get_browser_args(self) -> List[str]:
-        """Generate Chromium launch arguments based on current configuration.
-        
-        Constructs a list of command-line arguments for Chromium/Chrome browser
-        based on the enabled configuration flags. This includes kiosk mode settings,
-        performance optimizations, and security/privacy flags.
-        
-        Returns:
-            List of command-line arguments to pass to browser launch
-            
-        Example:
-            >>> config = BaseKioskConfig(kiosk_mode=True, disable_gpu=True)
-            >>> args = config.get_browser_args()
-            >>> "--kiosk" in args
-            True
-            >>> "--disable-gpu" in args
-            True
-        """
-        args: List[str] = []
-        
-        # Kiosk mode flags
-        if self.kiosk_mode:
-            args.extend([
-                "--kiosk",
-                "--start-fullscreen",
-            ])
-        
-        # UI element suppression
-        if self.disable_infobars:
-            args.append("--disable-infobars")
-        
-        if self.disable_notifications:
-            args.append("--disable-notifications")
-        
-        if self.disable_session_restore:
-            args.extend([
-                "--disable-session-crashed-bubble",
-                "--disable-restore-session-state",
-            ])
-        
-        # Performance optimizations
-        if self.disable_gpu:
-            args.extend([
-                "--disable-gpu",
-                "--disable-software-rasterizer",
-            ])
-        
-        if self.disable_dev_shm:
-            args.append("--disable-dev-shm-usage")
-        
-        # Standard kiosk-friendly arguments for unattended operation
-        args.extend([
-            "--no-first-run",  # Skip first-run wizards
-            "--no-default-browser-check",  # Don't check if default browser
-            "--disable-translate",  # Disable translation prompts
-            "--disable-features=TranslateUI",
-            "--disable-popup-blocking",  # Allow popups (kiosk context)
-            "--disable-prompt-on-repost",  # Don't confirm form resubmission
-            "--disable-background-timer-throttling",  # Keep background tabs active
-            "--disable-backgrounding-occluded-windows",
-            "--disable-renderer-backgrounding",
-            "--disable-hang-monitor",  # Don't show "page unresponsive" dialogs
-            "--disable-ipc-flooding-protection",
-            "--disable-client-side-phishing-detection",
-            "--disable-component-update",  # No auto-updates during operation
-            "--disable-default-apps",
-            "--disable-domain-reliability",
-            "--disable-features=AutofillServerCommunication",
-            "--disable-sync",  # No Google account sync
-            "--metrics-recording-only",  # Minimal telemetry
-            "--no-pings",
-            "--password-store=basic",  # Simple password storage
-            "--use-mock-keychain",
-            "--autoplay-policy=no-user-gesture-required",  # Allow autoplay
-        ])
-        
-        return args
 
 
 class LocalConfig(BaseKioskConfig):
@@ -203,7 +74,7 @@ class LocalConfig(BaseKioskConfig):
     Uses non-headless mode by default for easier debugging and development.
     """
     
-    environment: Environment = Environment.LOCAL
+    environment: str = "local"
     headless: bool = False  # Show browser for debugging
     log_level: LogLevel = LogLevel.DEBUG  # Verbose logging
     enable_console_logging: bool = True
@@ -217,9 +88,9 @@ class StagingConfig(BaseKioskConfig):
     Used for pre-production testing and quality assurance.
     """
     
-    environment: Environment = Environment.STAGING
+    environment: str = "staging"
     headless: bool = False  # Can still observe behavior
-    log_level: LogLevel = LogLevel.INFO
+    log_level: LogLevel = LogLevel.INFORMATIONAL
     enable_console_logging: bool = True
     auto_restart_on_crash: bool = True
     max_restart_attempts: int = Field(default=5, ge=1)  # More lenient for testing
@@ -232,7 +103,7 @@ class ProductionConfig(BaseKioskConfig):
     Uses headless mode and minimal logging for production deployments.
     """
     
-    environment: Environment = Environment.PRODUCTION
+    environment: str = "production"
     headless: bool = True  # Headless for production
     log_level: LogLevel = LogLevel.WARNING  # Minimal logging
     enable_console_logging: bool = False  # Reduce noise
@@ -242,26 +113,14 @@ class ProductionConfig(BaseKioskConfig):
     disable_dev_shm: bool = True  # Docker/container friendly
 
 
-# Environment to config class mapping
-_CONFIG_MAP: dict[str, type[BaseKioskConfig]] = {
-    Environment.LOCAL: LocalConfig,
-    Environment.STAGING: StagingConfig,
-    Environment.PRODUCTION: ProductionConfig,
-}
-
-
-def get_config(env: Union[str, Environment, None] = None) -> BaseKioskConfig:
+def get_config() -> BaseKioskConfig:
     """Factory function to get environment-specific configuration instance.
     
-    Creates and returns the appropriate configuration object based on the specified
-    or detected environment. Environment detection follows this priority:
-    1. Explicit env parameter
-    2. ENVIRONMENT environment variable
-    3. Default to LOCAL
+    Creates and returns the appropriate configuration object based on the
+    APP_ENVIRONMENT environment variable. Environment detection follows this priority:
+    1. APP_ENVIRONMENT environment variable
+    2. Default to local
     
-    Args:
-        env: Target environment name (local/staging/production) or None for auto-detect
-        
     Returns:
         Configuration instance for the specified environment
         
@@ -269,44 +128,33 @@ def get_config(env: Union[str, Environment, None] = None) -> BaseKioskConfig:
         ValueError: If specified environment is not supported
         
     Example:
-        >>> config = get_config("production")
+        >>> config = get_config()
         >>> config.environment
-        <Environment.PRODUCTION: 'production'>
-        
-        >>> config = get_config()  # Auto-detect from ENVIRONMENT env var
-        >>> config.log_level
-        <LogLevel.DEBUG: 'DEBUG'>
+        'production'
     """
-    # Determine environment from parameter, env var, or default
-    if env is None:
-        env_str = os.getenv("ENVIRONMENT", Environment.LOCAL.value).lower()
-    else:
-        env_str = env.value if isinstance(env, Environment) else env.lower()
-    
-    # Validate environment
-    try:
-        environment = Environment(env_str)
-    except ValueError:
-        valid_envs = ", ".join([e.value for e in Environment])
-        raise ValueError(
-            f"Invalid environment '{env_str}'. Must be one of: {valid_envs}"
-        )
+    # Determine environment from APP_ENVIRONMENT env var or default
+    env_str = os.getenv("APP_ENVIRONMENT", "local").lower()
     
     # Return appropriate config instance
-    config_class = _CONFIG_MAP[environment]
-    return config_class()
+    match env_str:
+        case "local":
+            return LocalConfig()
+        case "staging":
+            return StagingConfig()
+        case "production":
+            return ProductionConfig()
+        case _:
+            return LocalConfig()
 
 
 # Global config instance - auto-detects environment
 config: BaseKioskConfig = get_config()
-
 
 __all__ = [
     "BaseKioskConfig",
     "LocalConfig",
     "StagingConfig",
     "ProductionConfig",
-    "Environment",
     "BrowserType",
     "LogLevel",
     "get_config",
