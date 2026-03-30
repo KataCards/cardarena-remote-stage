@@ -1,0 +1,40 @@
+[Unit]
+Description=Chromium Kiosk Browser Engine
+Documentation=https://github.com/yourusername/cardarena-remote-stage
+After=network-online.target graphical.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/cardarena-remote-stage
+
+# Environment variables
+Environment="DISPLAY=:0"
+Environment="XAUTHORITY=/home/pi/.Xauthority"
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+
+# Load additional environment from .env file
+EnvironmentFile=-/home/pi/cardarena-remote-stage/.env
+
+# Start the kiosk browser
+ExecStart=/home/pi/cardarena-remote-stage/.venv/bin/python /home/pi/cardarena-remote-stage/main.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+StartLimitInterval=200
+StartLimitBurst=5
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=kiosk-browser
+
+[Install]
+WantedBy=graphical.target
