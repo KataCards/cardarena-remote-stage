@@ -14,8 +14,8 @@ from pathlib import Path
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lib.browser_engine import BrowserEngine
-from utils.config import LocalConfig, config
+from src.lib.browser_engine.browser_engine import BrowserEngine
+from src.utils.config import LocalConfig, config
 
 
 def create_parser():
@@ -227,7 +227,7 @@ async def run_error_handling_example():
 
 
 async def main():
-    """Main entry point."""
+    """Main entry point - instantiate browser engine and launch."""
     parser = create_parser()
     args = parser.parse_args()
     
@@ -244,22 +244,26 @@ async def main():
         return
     
     # Build configuration from arguments
-    cfg = config
+    cfg = LocalConfig() if args.url or args.rotate or args.embedded else config
     
+    # Apply embedded system optimizations
     if args.embedded:
         cfg.headless = True
         cfg.disable_gpu = True
         cfg.disable_dev_shm = True
         cfg.page_load_timeout = 60000
     
+    # Apply URL settings
     if args.url:
         cfg.start_url = args.url
     
+    # Apply rotation settings
     if args.rotate:
         cfg.enable_rotation = True
         if args.urls:
             cfg.rotation_urls = args.urls
     
+    # Apply display settings
     if args.interval:
         cfg.rotation_interval = args.interval
     
@@ -269,30 +273,47 @@ async def main():
     if args.height:
         cfg.window_height = args.height
     
+    # Apply browser mode settings
     if args.headless:
         cfg.headless = True
     
     if args.no_kiosk:
         cfg.kiosk_mode = False
     
-    # Create and run browser
+    # Print startup information
+    print("=" * 60)
+    print("Chromium Kiosk Browser Engine")
+    print("=" * 60)
+    print(f"Environment:  {cfg.environment}")
+    print(f"Start URL:    {cfg.start_url}")
+    print(f"Kiosk Mode:   {cfg.kiosk_mode}")
+    print(f"Headless:     {cfg.headless}")
+    print(f"Resolution:   {cfg.window_width}x{cfg.window_height}")
+    
+    if cfg.enable_rotation:
+        print(f"\nRotation:     Enabled")
+        print(f"URLs:         {len(cfg.rotation_urls)} URLs")
+        print(f"Interval:     {cfg.rotation_interval}s")
+        for i, url in enumerate(cfg.rotation_urls, 1):
+            print(f"  {i}. {url}")
+    else:
+        print(f"\nRotation:     Disabled")
+    
+    print("\nPress Ctrl+C to exit")
+    print("=" * 60)
+    print()
+    
+    # Instantiate browser engine
     engine = BrowserEngine(cfg)
     
+    # Launch browser
     try:
-        print(f"Starting Chromium Kiosk Browser...")
-        print(f"URL: {cfg.start_url}")
-        print(f"Kiosk Mode: {cfg.kiosk_mode}")
-        print(f"Rotation: {cfg.enable_rotation}")
-        if cfg.enable_rotation:
-            print(f"URLs: {cfg.rotation_urls}")
-            print(f"Interval: {cfg.rotation_interval}s")
-        print("\nPress Ctrl+C to exit\n")
-        
         await engine.run()
     except KeyboardInterrupt:
-        print("\nShutting down gracefully...")
+        print("\n\nShutdown signal received...")
     finally:
         await engine.shutdown()
+        print("Browser engine stopped.")
 
 
 if __name__ == "__main__":
