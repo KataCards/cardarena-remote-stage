@@ -1,8 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field
-from src.kiosk.engine.base import Engine
 from abc import ABC, abstractmethod
 from typing import Literal
-
+from ..engine.base import Engine
 
 class Controls(BaseModel, ABC):
     """

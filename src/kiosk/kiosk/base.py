@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
-from src.kiosk.controls.base import Controls
-from src.kiosk.engine.base import Engine
+from ..controls.base import Controls
 from abc import ABC, abstractmethod
+from ..engine.base import Engine
 from typing import Any, Literal
 from uuid import UUID, uuid4
 
@@ -58,7 +60,7 @@ class Kiosk(BaseModel, ABC):
     default_page: str = Field(
         ...,
         description="URL to navigate to on start",
-        pattern=r"^https?://.*",
+        pattern=r"^(https?|file)://.+",
     )
 
     is_running: bool = Field(

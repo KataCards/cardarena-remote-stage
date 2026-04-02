@@ -1,8 +1,8 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from collections.abc import Callable
 from abc import ABC, abstractmethod
+from typing import Any, Awaitable
 from pathlib import Path
-from typing import Any
 
 
 class Engine(BaseModel, ABC):
@@ -58,7 +58,7 @@ class Engine(BaseModel, ABC):
         description="Mapping of HTTP error codes to resource keys",
     )
 
-    on_error: Callable[[int], Any] = Field(
+    on_error: Callable[[int], Awaitable[None]] = Field(
         ...,
         description="Callback function invoked when an error occurs",
     )
@@ -175,9 +175,6 @@ class Engine(BaseModel, ABC):
 
     async def __aexit__(
         self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: Any,
     ) -> None:
         """
         Async context manager exit point.
@@ -185,12 +182,7 @@ class Engine(BaseModel, ABC):
         Closes the engine when exiting the context, regardless of whether
         an exception occurred.
 
-        Args:
-            exc_type: The type of exception that occurred, if any.
-            exc_val: The exception instance that occurred, if any.
-            exc_tb: The traceback object, if any.
         """
-        del exc_type, exc_val, exc_tb  # Unused but required by protocol
         await self.close()
 
     # -------------------------------------------------------------------------
@@ -283,7 +275,7 @@ class Engine(BaseModel, ABC):
     # Error Handling
     # -------------------------------------------------------------------------
 
-    def handle_error(self, error_code: int) -> str:
+    async def handle_error(self, error_code: int) -> str:
         """
         Resolve the local HTML file path for a given HTTP error code and invoke
         the on_error callback.
@@ -299,14 +291,14 @@ class Engine(BaseModel, ABC):
             ValueError: If the resolved resource key is not found in resources.
 
         Example:
-            ```python
+    ```python
             engine = MyEngine(
                 error_map={404: "not_found", 500: "server_error"},
                 resources={"not_found": "/path/to/404.html", "server_error": "/path/to/500.html"},
                 # ... other required fields
             )
-            path = engine.handle_error(404)  # Returns "/path/to/404.html"
-            ```
+            path = await engine.handle_error(404)  # Returns "/path/to/404.html"
+    ```
         """
         if error_code not in self.error_map:
             raise KeyError(
@@ -322,5 +314,5 @@ class Engine(BaseModel, ABC):
                 f"not found in resources. Available resources: {sorted(self.resources.keys())}"
             )
 
-        self.on_error(error_code)
+        await self.on_error(error_code)
         return self.resources[resource_key]
