@@ -58,8 +58,8 @@ class Engine(BaseModel, ABC):
         description="Mapping of HTTP error codes to resource keys",
     )
 
-    on_error: Callable[[int], Awaitable[None]] = Field(
-        ...,
+    on_error: Callable[[int], Awaitable[None]] | None = Field(
+        default=None,
         description="Callback function invoked when an error occurs",
     )
 
@@ -314,5 +314,6 @@ class Engine(BaseModel, ABC):
                 f"not found in resources. Available resources: {sorted(self.resources.keys())}"
             )
 
-        await self.on_error(error_code)
+        if self.on_error:
+            await self.on_error(error_code)
         return self.resources[resource_key]

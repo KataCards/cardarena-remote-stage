@@ -3,6 +3,7 @@ from __future__ import annotations
 from ..utils.decorators.control_action import control_action
 from ..engine.playwright import PlaywrightEngine
 from .base import Controls
+from pydantic import Field
 from typing import Literal
 import re
 
@@ -53,7 +54,10 @@ class PlaywrightControls(Controls):
         ```
     """
 
-    engine: PlaywrightEngine
+    engine: PlaywrightEngine = Field(
+        ...,
+        description="The PlaywrightEngine instance powering the kiosk",
+    )
 
     # -------------------------------------------------------------------------
     # Validators
