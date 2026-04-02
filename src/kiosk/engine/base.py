@@ -186,6 +186,27 @@ class Engine(BaseModel, ABC):
         await self.close()
 
     # -------------------------------------------------------------------------
+    # Page Access
+    # -------------------------------------------------------------------------
+
+    @abstractmethod
+    def _require_page(self) -> Any:
+        """
+        Return the active page object, raising if the engine is not running.
+
+        This is the canonical guard used by all page-state and interaction
+        methods. Implementations must raise RuntimeError when no page is
+        available (e.g. before launch() has been called).
+
+        Returns:
+            The engine-specific page object.
+
+        Raises:
+            RuntimeError: If no page is active or the engine is not running.
+        """
+        ...
+
+    # -------------------------------------------------------------------------
     # Page State Methods
     # -------------------------------------------------------------------------
 

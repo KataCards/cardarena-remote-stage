@@ -60,7 +60,7 @@ class Kiosk(BaseModel, ABC):
     default_page: str = Field(
         ...,
         description="URL to navigate to on start",
-        pattern=r"^(https?|file)://.+",
+        pattern=r"^(https?://([a-zA-Z0-9.-]+|\[[0-9a-fA-F:]+\])(:[0-9]+)?(/[^\s]*)?|file:///[^\s]*)$",
     )
 
     is_running: bool = Field(

@@ -105,8 +105,6 @@ class PlaywrightEngine(Engine):
             self._page = await self._browser.new_page()
             self._page.on("response", self._handle_response)
 
-            await self._page.goto(self.default_page)
-
         except Exception as e:
             # Clean up partial state on failure
             await self.close()
@@ -266,6 +264,9 @@ class PlaywrightEngine(Engine):
     # -------------------------------------------------------------------------
     # Public Page Access
     # -------------------------------------------------------------------------
+
+    def _require_page(self) -> Page:
+        return self.get_page()
 
     def get_page(self) -> Page:
         """

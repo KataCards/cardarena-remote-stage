@@ -22,11 +22,10 @@ _SCROLL_MAP: dict[str, tuple[int, int]] = {
 
 # Basic URL validation pattern (http/https/file protocols)
 _URL_PATTERN = re.compile(
-    r'^(https?|file)://'       # Protocol
-    r'(//'                      # Optional authority for file://
-    r'([a-zA-Z0-9.-]+|\[[0-9a-fA-F:]+\])'  # Domain or IPv6
-    r'(:[0-9]+)?)?'             # Optional port
-    r'(/.*)?$',                 # Optional path
+    r'^('
+    r'https?://([a-zA-Z0-9.-]+|\[[0-9a-fA-F:]+\])(:[0-9]+)?(/[^\s]*)?'  # http(s)://host[:port][/path]
+    r'|file:///[^\s]*'                                                     # file:///path
+    r')$',
     re.IGNORECASE
 )
 
@@ -53,6 +52,12 @@ class PlaywrightControls(Controls):
             await controls.click(100, 200)
         ```
     """
+
+    control_type: str = Field(
+        default="playwright",
+        description="The type of browser controls",
+        min_length=0,
+    )
 
     engine: PlaywrightEngine = Field(
         ...,
