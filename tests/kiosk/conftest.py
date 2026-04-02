@@ -40,7 +40,6 @@ class ConcreteControls(Controls):
     async def reload(self) -> bool: return True
     async def go_back(self) -> bool: return True
     async def go_forward(self) -> bool: return True
-    async def go_home(self) -> bool: return True
     async def click(self, x: int, y: int) -> bool: return True
     async def type_text(self, text: str) -> bool: return True
 
@@ -50,19 +49,6 @@ class ConcreteControls(Controls):
 
     async def press_key(self, key: str) -> bool: return True
     async def wait_for_navigation(self) -> bool: return True
-
-
-class ConcretePlaywrightControls(PlaywrightControls):
-    """
-    Concrete PlaywrightControls with a go_home stub.
-
-    PlaywrightControls does not implement go_home (home navigation is managed
-    at the Kiosk layer), so it remains abstract. This subclass adds a minimal
-    stub so the class can be instantiated in tests and in PlaywrightKiosk.start().
-    """
-
-    async def go_home(self) -> bool:
-        return False
 
 
 class ConcreteKiosk(Kiosk):
@@ -78,12 +64,12 @@ class ConcreteKiosk(Kiosk):
 
 class ConcretePlaywrightKiosk(PlaywrightKiosk):
     """
-    PlaywrightKiosk that instantiates ConcretePlaywrightControls instead of the
-    abstract PlaywrightControls.
+    PlaywrightKiosk that uses PlaywrightControls directly now that go_home is
+    removed from the abstract interface.
     """
 
     async def start(self) -> None:
-        self.controls = ConcretePlaywrightControls(engine=self.engine)
+        self.controls = PlaywrightControls(engine=self.engine)
         await self.engine.launch()
         await self._navigate_with_retry(self.default_page)
         self.is_running = True
@@ -153,9 +139,9 @@ def mock_pw_engine(tmp_html: Path) -> PlaywrightEngine:
 
 
 @pytest.fixture
-def mock_pw_controls(mock_pw_engine: PlaywrightEngine) -> ConcretePlaywrightControls:
-    """ConcretePlaywrightControls backed by mock_pw_engine."""
-    return ConcretePlaywrightControls(engine=mock_pw_engine)
+def mock_pw_controls(mock_pw_engine: PlaywrightEngine) -> PlaywrightControls:
+    """PlaywrightControls backed by mock_pw_engine."""
+    return PlaywrightControls(engine=mock_pw_engine)
 
 
 @pytest.fixture

@@ -10,10 +10,11 @@ from pydantic import PrivateAttr
 
 from src.kiosk.engine.playwright import PlaywrightEngine
 from src.kiosk.kiosk.playwright import PlaywrightKiosk
-from tests.kiosk.conftest import ConcretePlaywrightControls, ConcretePlaywrightKiosk
+from src.kiosk.controls.playwright import PlaywrightControls
+from tests.kiosk.conftest import ConcretePlaywrightKiosk
 
 
-class FailingControls(ConcretePlaywrightControls):
+class FailingControls(PlaywrightControls):
     """Controls that always returns False from navigate and counts calls."""
 
     _navigate_calls: int = PrivateAttr(default=0)

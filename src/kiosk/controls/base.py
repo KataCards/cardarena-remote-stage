@@ -92,19 +92,6 @@ class Controls(BaseModel, ABC):
         """
         ...
 
-    @abstractmethod
-    async def go_home(self) -> bool:
-        """
-        Navigate to the home page.
-
-        Returns:
-            True if navigation succeeded, False if navigation failed softly (e.g., timeout).
-
-        Raises:
-            RuntimeError: If a hard failure occurs (e.g., engine not running).
-        """
-        ...
-
     # -------------------------------------------------------------------------
     # Interaction Methods
     # -------------------------------------------------------------------------

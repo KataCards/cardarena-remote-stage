@@ -9,10 +9,13 @@ Public API:
     - Engine: Abstract browser engine base class
     - Controls: Abstract browser controls base class
     - Kiosk: Abstract kiosk orchestration base class
+    - PlaywrightEngine: Playwright-based browser engine implementation
+    - PlaywrightControls: Playwright-based browser controls implementation
+    - PlaywrightKiosk: Playwright-based kiosk orchestration implementation
 """
 
 from .controls import Controls
-from .engine import Engine
-from .kiosk import Kiosk
+from .engine import Engine, PlaywrightEngine
+from .kiosk import Kiosk, PlaywrightKiosk
 
-__all__ = ["Engine", "Controls", "Kiosk"]
+__all__ = ["Engine", "Controls", "Kiosk", "PlaywrightEngine", "PlaywrightKiosk"]
