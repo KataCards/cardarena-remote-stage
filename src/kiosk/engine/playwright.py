@@ -113,6 +113,16 @@ class PlaywrightEngine(Engine):
             self._page = await self._browser.new_page(no_viewport=True)
             self._page.on("response", self._handle_response)
 
+            # CDP setWindowBounds has better compatibility than --kiosk on VNC/Linux
+            if self.fullscreen and not self.headless:
+                cdp = await self._page.context.new_cdp_session(self._page)
+                result = await cdp.send("Browser.getWindowForTarget")
+                await cdp.send("Browser.setWindowBounds", {
+                    "windowId": result["windowId"],
+                    "bounds": {"windowState": "fullscreen"},
+                })
+                await cdp.detach()
+
         except Exception as e:
             # Clean up partial state on failure
             await self.close()

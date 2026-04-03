@@ -63,6 +63,11 @@ class Engine(BaseModel, ABC):
         description="Callback function invoked when an error occurs",
     )
 
+    fullscreen: bool = Field(
+        default=False,
+        description="Force the browser into fullscreen after launch. Each engine handles this differently.",
+    )
+
     # -------------------------------------------------------------------------
     # Validators
     # -------------------------------------------------------------------------
