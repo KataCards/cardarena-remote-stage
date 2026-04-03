@@ -162,3 +162,20 @@ class PlaywrightKiosk(Kiosk):
         raise RuntimeError(
             f"Failed to navigate to '{url}' after {self.max_retries} attempts"
         )
+
+    # -------------------------------------------------------------------------
+    # Navigation Methods
+    # -------------------------------------------------------------------------
+
+    async def go_home(self) -> bool:
+        """
+        Navigate to the default page.
+
+        Returns:
+            True if navigation succeeded.
+
+        Raises:
+            RuntimeError: If controls are not mounted or navigation fails.
+        """
+        await self._navigate_with_retry(self.default_page)
+        return True

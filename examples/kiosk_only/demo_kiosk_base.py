@@ -1,7 +1,7 @@
 """
-Minimal demo script showcasing the kiosk package end-to-end.
+Basic kiosk demo showcasing core functionality.
 
-This script demonstrates:
+This demo demonstrates:
 - Creating a PlaywrightEngine with visible browser
 - Creating a PlaywrightKiosk with URL whitelisting
 - Using async context manager for lifecycle management
@@ -11,9 +11,9 @@ This script demonstrates:
 - Getting kiosk status
 """
 
+from pathlib import Path
 import asyncio
 import sys
-from pathlib import Path
 
 # Add src directory to Python path
 src_path = Path(__file__).parent.parent.parent / "src"
@@ -24,6 +24,9 @@ from kiosk.kiosk.playwright import PlaywrightKiosk
 
 
 async def main():
+    """Run the basic kiosk demo."""
+    print("\n=== Running Basic Kiosk Demo ===\n")
+
     # Create the Playwright engine
     engine = PlaywrightEngine(
         browser_type="chromium",
@@ -64,7 +67,7 @@ async def main():
         print("Waiting 5 seconds...")
         await asyncio.sleep(5)
 
-    print("Kiosk closed cleanly")
+    print("Kiosk closed cleanly\n")
 
 
 if __name__ == "__main__":

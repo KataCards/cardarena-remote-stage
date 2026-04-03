@@ -300,6 +300,19 @@ class Kiosk(BaseModel, ABC):
         """
         return await self._require_controls().go_forward()
 
+    @abstractmethod
+    async def go_home(self) -> bool:
+        """
+        Navigate to the default page.
+
+        Returns:
+            True if navigation succeeded.
+
+        Raises:
+            RuntimeError: If controls are not mounted or navigation fails.
+        """
+        ...
+
     # -------------------------------------------------------------------------
     # Interaction Methods
     # -------------------------------------------------------------------------

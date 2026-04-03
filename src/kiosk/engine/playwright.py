@@ -52,6 +52,11 @@ class PlaywrightEngine(Engine):
         description="Run browser in headless mode",
     )
 
+    launch_args: list[str] = Field(
+        default_factory=list,
+        description="Additional command-line arguments to pass to the browser",
+    )
+
     engine_type: str = Field(
         default="",
         description="The type of browser engine",
@@ -81,7 +86,6 @@ class PlaywrightEngine(Engine):
         3. Launch browser using configured browser_type and headless flag
         4. Create new page
         5. Wire response listener (monitors HTTP responses, calls handle_error on errors)
-        6. Navigate to default_page
 
         The response listener is critical: it intercepts all HTTP responses and
         triggers error handling for any status code configured in error_map.
@@ -98,9 +102,11 @@ class PlaywrightEngine(Engine):
 
         try:
             self._playwright = await async_playwright().start()
-
             browser_launcher = getattr(self._playwright, self.browser_type)
-            self._browser = await browser_launcher.launch(headless=self.headless)
+            self._browser = await browser_launcher.launch(
+                headless=self.headless,
+                args=self.launch_args,
+            )
 
             self._page = await self._browser.new_page()
             self._page.on("response", self._handle_response)
