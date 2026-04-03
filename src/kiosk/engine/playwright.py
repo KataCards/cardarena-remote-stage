@@ -108,7 +108,9 @@ class PlaywrightEngine(Engine):
                 args=self.launch_args,
             )
 
-            self._page = await self._browser.new_page()
+            # Create page with no viewport to respect launch args like --start-fullscreen
+            # Setting viewport=None allows the browser to use its natural window size
+            self._page = await self._browser.new_page(no_viewport=True)
             self._page.on("response", self._handle_response)
 
         except Exception as e:

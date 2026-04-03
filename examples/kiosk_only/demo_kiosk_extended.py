@@ -28,7 +28,11 @@ async def main():
     engine = PlaywrightEngine(
         browser_type="chromium",
         headless=False,
-        launch_args=["--kiosk"],
+        launch_args=[
+            "--kiosk",             # True kiosk mode (perfect for Linux/Raspberry Pi)
+            "--disable-infobars",  # Hide info bars
+            "--no-first-run",      # Skip first run wizards
+        ],
         error_map={},
         resources={},
     )
