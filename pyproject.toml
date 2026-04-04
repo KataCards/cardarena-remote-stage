@@ -11,10 +11,12 @@ dependencies = [
     "pydantic-settings>=2.7.0",
     "pytest-playwright>=0.7.2",
     "python-dotenv>=1.0.0",
+    "sqlalchemy>=2.0.0",
 ]
 
 [project.scripts]
 browser-engine = "main:main"
+apikey = "security.api_keys.cli:main"
 
 [project.optional-dependencies]
 dev = [
