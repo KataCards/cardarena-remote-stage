@@ -15,14 +15,18 @@ class ApiKeyDatabase:
     """SQLAlchemy-based database for API key storage.
 
     Manages the engine, metadata, and table schema for API keys.
-    The database is initialized and ready to use immediately after instantiation.
+    Call `initialise()` explicitly at app startup to create the schema —
+    the constructor deliberately does not touch the database.
+
+    Note: `apikey_db_type` in settings exists for future extensibility,
+    but SQLite is the only supported backend today.
     """
 
     def __init__(self, db_path: str) -> None:
-        """Initialize the database with the given path.
+        """Prepare the engine and table definition without touching the database.
 
         Args:
-            db_path: Path to the SQLite database file
+            db_path: Path to the SQLite database file (use ":memory:" for tests)
         """
         self.engine: Engine = create_engine(
             f"sqlite:///{db_path}",
@@ -40,4 +44,7 @@ class ApiKeyDatabase:
             Column("expires_at", DateTime(timezone=True), nullable=True),  # None = no expiry
             Column("revoked", Boolean, nullable=False, default=False),
         )
+
+    def initialise(self) -> None:
+        """Create the database schema. Must be called once at app startup."""
         self.metadata.create_all(self.engine)

@@ -18,6 +18,7 @@ class ApiKeyCLI:
         """Initialize CLI with database and repository."""
         settings = get_settings()
         db = ApiKeyDatabase(settings.apikey_db_path)
+        db.initialise()
         self.repo = ApiKeyRepository(db)
 
     def create_key(self, name: str, scopes: list[str], expires: str | None = None) -> None:

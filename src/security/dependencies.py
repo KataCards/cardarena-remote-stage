@@ -3,10 +3,6 @@ from fastapi import Depends, HTTPException, Request
 from .base.principal import Principal, Scope
 from .config import get_active_provider
 
-# Build get_principal once at import time for stable Depends reference and correct OpenAPI schema.
-# NOTE: This triggers DB/provider construction at import time, before app.py startup validation.
-#       Step 11 startup validation will need to account for this — if DB path is wrong or env is
-#       misconfigured, the error surfaces here at import, not at app startup.
 _provider = get_active_provider()
 
 

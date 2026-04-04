@@ -10,7 +10,6 @@ Provides database-backed API key authentication with:
 
 from .provider import ApiKeyProvider
 from .models import ApiKeyCreate, ApiKeyRecord, ApiKeyCreated
-from .router import router
 from .utils import hash_key
 
 __all__ = [
@@ -18,6 +17,5 @@ __all__ = [
     "ApiKeyCreate",
     "ApiKeyRecord",
     "ApiKeyCreated",
-    "router",
     "hash_key",
 ]

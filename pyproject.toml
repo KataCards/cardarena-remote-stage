@@ -16,7 +16,7 @@ dependencies = [
 
 [project.scripts]
 browser-engine = "main:main"
-apikey = "security.api_keys.cli:main"
+apikey = "security.providers.api_keys.cli:main"
 
 [project.optional-dependencies]
 dev = [

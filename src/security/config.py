@@ -28,7 +28,7 @@ def get_active_provider() -> SecurityProvider:
     """Instantiate and return the configured security provider.
 
     Reads SECURITY_PROVIDER from env to select the implementation.
-    Currently supported values: "api_key"
+    NOTE: Only "api_key" is supported today. Other provider names raise ValueError.
 
     Returns:
         A fully initialised SecurityProvider instance.
@@ -44,6 +44,7 @@ def get_active_provider() -> SecurityProvider:
         from .providers.api_keys.repository import ApiKeyRepository
 
         db = ApiKeyDatabase(settings.apikey_db_path)
+        db.initialise()
         repo = ApiKeyRepository(db)
         return ApiKeyProvider(repo)
 
