@@ -59,6 +59,7 @@ def test_navigate_kiosk_failure_returns_500() -> None:
         _make_app(registry, [Scope.CONTROL]), raise_server_exceptions=False
     ).post("/kiosks/uuid-1/navigate", json={"url": "https://example.com"})
     assert response.status_code == 500
+    kiosk.navigate.assert_called_once_with("https://example.com")
 
 
 def test_reload_returns_204() -> None:
@@ -66,7 +67,7 @@ def test_reload_returns_204() -> None:
     registry = _registry_with(kiosk)
     response = TestClient(_make_app(registry, [Scope.CONTROL])).post("/kiosks/uuid-1/reload")
     assert response.status_code == 204
-    kiosk.reload.assert_called_once()
+    kiosk.reload.assert_called_once_with()
 
 
 def test_reload_unknown_uuid_returns_404() -> None:
