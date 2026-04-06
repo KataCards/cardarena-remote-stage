@@ -14,6 +14,8 @@ from src.api.registry import KioskRegistry
 from src.api.routes.control import build_router as build_control_router
 from src.api.routes.health import build_router as build_health_router
 from src.api.routes.kiosks import build_router as build_kiosks_router
+from src.api.routes.schedule import build_router as build_schedule_router
+from src.api.scheduler import KioskScheduler
 from src.kiosk.engine.playwright import PlaywrightEngine
 from src.kiosk.kiosk.playwright import PlaywrightKiosk
 from src.security.config import SecuritySettings
@@ -43,6 +45,7 @@ _repo = ApiKeyRepository(_db)
 # Kiosk registry (module-level — no kiosk construction here)
 # ---------------------------------------------------------------------------
 registry = KioskRegistry()
+scheduler = KioskScheduler(registry)
 
 
 # ---------------------------------------------------------------------------
@@ -81,3 +84,4 @@ app.include_router(build_security_router(_repo))
 app.include_router(build_health_router(registry))
 app.include_router(build_kiosks_router(registry))
 app.include_router(build_control_router(registry))
+app.include_router(build_schedule_router(registry, scheduler))
