@@ -26,3 +26,12 @@ def test_allowed_urls_accepts_list() -> None:
         kiosk_error_page="",
     )
     assert settings.kiosk_allowed_urls == ["https://a.com", "https://b.com"]
+
+
+def test_get_settings_returns_cached_instance() -> None:
+    from src.api.config import get_settings
+    get_settings.cache_clear()
+    s1 = get_settings()
+    s2 = get_settings()
+    assert s1 is s2
+    get_settings.cache_clear()
