@@ -22,7 +22,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
         for uuid, kiosk in registry.list().items():
             try:
                 url = await kiosk.engine.get_current_url()
-            except Exception:
+            except RuntimeError:
                 url = ""
             summaries.append(
                 KioskSummary(uuid=uuid, is_running=kiosk.is_running, current_url=url)
@@ -36,7 +36,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
             raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
         try:
             url = await kiosk.engine.get_current_url()
-        except Exception:
+        except RuntimeError:
             url = ""
         return KioskStatus(uuid=uuid, current_url=url, is_running=kiosk.is_running, error=None)
 
