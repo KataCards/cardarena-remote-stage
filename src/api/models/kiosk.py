@@ -29,5 +29,5 @@ class NavigateRequest(BaseModel):
     @field_validator("url")
     @classmethod
     def _validate_url(cls, v: str) -> str:
-        HttpUrl(v)  # raises ValueError if invalid — Pydantic wraps it as ValidationError
+        HttpUrl(v)  # raises ValidationError directly if the URL is structurally invalid
         return v

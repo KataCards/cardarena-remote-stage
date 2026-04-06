@@ -30,7 +30,7 @@ def test_navigate_request_rejects_missing_scheme() -> None:
 
 def test_navigate_request_is_frozen() -> None:
     req = NavigateRequest(url="https://example.com")
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         req.url = "https://other.com"  # type: ignore[misc]
 
 
@@ -47,7 +47,7 @@ def test_kiosk_status_fields() -> None:
 
 def test_kiosk_status_is_frozen() -> None:
     status = KioskStatus(uuid="x", current_url="https://a.com", is_running=False, error=None)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         status.uuid = "y"  # type: ignore[misc]
 
 
@@ -77,5 +77,5 @@ def test_schedule_request_entries() -> None:
 
 def test_schedule_models_are_frozen() -> None:
     entry = ScheduleEntry(url="https://a.com", duration_seconds=10, order=1)
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         entry.order = 99  # type: ignore[misc]
