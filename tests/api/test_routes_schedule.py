@@ -1,7 +1,7 @@
 """Tests for schedule, cancel, and ad-break routes."""
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, MagicMock
 

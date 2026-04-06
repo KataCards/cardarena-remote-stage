@@ -24,15 +24,22 @@ class KioskScheduler:
 
     async def _loop_schedule(self, uuid: str, request: ScheduleRequest) -> None:
         kiosk = self._registry.get(uuid)
+        if kiosk is None:
+            return
         sorted_entries = sorted(request.entries, key=lambda e: e.order)
-        while True:
-            for entry in sorted_entries:
-                await kiosk.navigate(entry.url)
-                await asyncio.sleep(entry.duration_seconds)
+        try:
+            while True:
+                for entry in sorted_entries:
+                    await kiosk.navigate(entry.url)
+                    await asyncio.sleep(entry.duration_seconds)
+        except asyncio.CancelledError:
+            raise
 
     async def run_ad_break(self, uuid: str, ad: AdBreak) -> None:
         """Navigate to the ad URL, wait, then return to the URL that was showing."""
         kiosk = self._registry.get(uuid)
+        if kiosk is None:
+            return
         current_url = await kiosk.engine.get_current_url()
         await kiosk.navigate(ad.url)
         await asyncio.sleep(ad.duration_seconds)
@@ -45,6 +52,9 @@ class KioskScheduler:
         """
         task = self._tasks.get(uuid)
         if task is None or task.done():
+            if uuid in self._tasks:
+                del self._tasks[uuid]
             return False
         task.cancel()
+        del self._tasks[uuid]
         return True
