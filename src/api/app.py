@@ -11,6 +11,7 @@ from fastapi import FastAPI
 
 from src.api.config import get_settings
 from src.api.registry import KioskRegistry
+from src.api.routes.control import build_router as build_control_router
 from src.api.routes.health import build_router as build_health_router
 from src.api.routes.kiosks import build_router as build_kiosks_router
 from src.kiosk.engine.playwright import PlaywrightEngine
@@ -79,3 +80,4 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(build_security_router(_repo))
 app.include_router(build_health_router(registry))
 app.include_router(build_kiosks_router(registry))
+app.include_router(build_control_router(registry))
