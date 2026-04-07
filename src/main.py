@@ -73,24 +73,8 @@ async def lifespan(app: FastAPI):  # noqa: ARG001
         kiosk_name=settings.kiosk_name,
         allowed_urls=settings.kiosk_allowed_urls,
     )
-    firefox_engine = PlaywrightEngine(
-        engine_type="playwright",
-        browser_type="firefox",
-        resources=resources,
-        error_map=error_map,
-        headless=settings.kiosk_headless,
-        fullscreen=settings.kiosk_fullscreen,
-        launch_args=launch_args,
-    )
-    firefox_kiosk = PlaywrightKiosk(
-        engine=firefox_engine,
-        default_page=settings.kiosk_default_url,
-        kiosk_name=f"{settings.kiosk_name}-firefox",
-        allowed_urls=settings.kiosk_allowed_urls,
-    )
 
     registry.register(str(uuid4()), primary_kiosk)
-    registry.register(str(uuid4()), firefox_kiosk)
     for current_kiosk in registry.list_all().values():
         await current_kiosk.start()
     yield
