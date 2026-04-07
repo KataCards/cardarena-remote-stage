@@ -1,4 +1,3 @@
-"""Control routes — navigate and reload kiosks."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -6,15 +5,15 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
-from src.api.models.kiosk import NavigateRequest
-from src.security.base.principal import Scope
-from src.security.dependencies import require_scope
+from ..models import NavigateRequest
+from ...security import Scope, require_scope
 
 if TYPE_CHECKING:
-    from src.api.registry import KioskRegistry
+    from ..registry import KioskRegistry
 
 
 def build_router(registry: "KioskRegistry") -> APIRouter:
+    """Build kiosk control routes."""
     router = APIRouter()
 
     @router.post("/kiosks/{uuid}/navigate", status_code=204)

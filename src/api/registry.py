@@ -1,4 +1,3 @@
-"""Thread-safe in-memory registry mapping UUIDs to kiosk instances."""
 from __future__ import annotations
 
 import threading
@@ -35,7 +34,7 @@ class KioskRegistry:
             del self._kiosks[uuid]
             return True
 
-    def list(self) -> dict[str, "PlaywrightKiosk"]:
+    def list_all(self) -> dict[str, "PlaywrightKiosk"]:
         """Return a shallow copy of all registered kiosks."""
         with self._lock:
             return dict(self._kiosks)

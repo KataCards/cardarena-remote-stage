@@ -1,13 +1,12 @@
-"""KioskScheduler — manages asyncio background tasks for per-kiosk schedule loops."""
 from __future__ import annotations
 
 import asyncio
 from typing import TYPE_CHECKING
 
-from src.api.models.schedule import AdBreak, ScheduleRequest
+from .models import AdBreak, ScheduleRequest
 
 if TYPE_CHECKING:
-    from src.api.registry import KioskRegistry
+    from .registry import KioskRegistry
 
 
 class KioskScheduler:
@@ -25,7 +24,7 @@ class KioskScheduler:
     async def _loop_schedule(self, uuid: str, request: ScheduleRequest) -> None:
         kiosk = self._registry.get(uuid)
         if kiosk is None:
-            return
+            raise ValueError(f"Kiosk not found: {uuid}")
         sorted_entries = sorted(request.entries, key=lambda e: e.order)
         try:
             while True:
@@ -33,14 +32,17 @@ class KioskScheduler:
                     await kiosk.navigate(entry.url)
                     await asyncio.sleep(entry.duration_seconds)
         except asyncio.CancelledError:
+            # Preserve task cancellation semantics so callers can shut loops down cleanly.
             raise
 
     async def run_ad_break(self, uuid: str, ad: AdBreak) -> None:
         """Navigate to the ad URL, wait, then return to the URL that was showing."""
         kiosk = self._registry.get(uuid)
         if kiosk is None:
-            return
-        current_url = await kiosk.engine.get_current_url()
+            raise ValueError(f"Kiosk not found: {uuid}")
+        current_url = kiosk.current_url
+        if not current_url:
+            raise ValueError(f"Kiosk has no current URL to return to: {uuid}")
         await kiosk.navigate(ad.url)
         await asyncio.sleep(ad.duration_seconds)
         await kiosk.navigate(current_url)

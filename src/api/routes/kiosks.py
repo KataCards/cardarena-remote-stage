@@ -1,31 +1,30 @@
-"""Kiosk read routes — GET /kiosks and GET /kiosks/{uuid}."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from src.api.models.kiosk import KioskStatus, KioskSummary
-from src.security.base.principal import Scope
-from src.security.dependencies import require_scope
+from ..models import KioskStatus, KioskSummary
+from ...security import Scope, require_scope
 
 if TYPE_CHECKING:
-    from src.api.registry import KioskRegistry
+    from ..registry import KioskRegistry
 
 
 def build_router(registry: "KioskRegistry") -> APIRouter:
+    """Build read-only kiosk routes."""
     router = APIRouter()
 
     @router.get("/kiosks", response_model=list[KioskSummary])
     async def list_kiosks(_=Depends(require_scope(Scope.READ))) -> list[KioskSummary]:
         summaries = []
-        for uuid, kiosk in registry.list().items():
-            try:
-                url = await kiosk.engine.get_current_url()
-            except RuntimeError:
-                url = ""
+        for uuid, kiosk in registry.list_all().items():
             summaries.append(
-                KioskSummary(uuid=uuid, is_running=kiosk.is_running, current_url=url)
+                KioskSummary(
+                    uuid=uuid,
+                    is_running=kiosk.is_running,
+                    current_url=kiosk.current_url,
+                )
             )
         return summaries
 
@@ -34,10 +33,10 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
         kiosk = registry.get(uuid)
         if kiosk is None:
             raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
-        try:
-            url = await kiosk.engine.get_current_url()
-        except RuntimeError:
-            url = ""
-        return KioskStatus(uuid=uuid, current_url=url, is_running=kiosk.is_running, error=None)
+        return KioskStatus(
+            uuid=uuid,
+            current_url=kiosk.current_url,
+            is_running=kiosk.is_running,
+        )
 
     return router

@@ -1,6 +1,6 @@
 """Public re-exports for API models."""
-from src.api.models.kiosk import KioskStatus, KioskSummary, NavigateRequest
-from src.api.models.schedule import AdBreak, ScheduleEntry, ScheduleRequest
+from .kiosk import KioskStatus, KioskSummary, NavigateRequest
+from .schedule import AdBreak, ScheduleEntry, ScheduleRequest
 
 __all__ = [
     "AdBreak",

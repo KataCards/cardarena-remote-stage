@@ -1,5 +1,3 @@
-"""Security configuration loaded from environment variables."""
-
 from functools import lru_cache
 
 from pydantic import ConfigDict

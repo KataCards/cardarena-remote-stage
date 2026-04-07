@@ -149,3 +149,7 @@ def main() -> None:
         cli.revoke_key(args.name)
     elif args.command == "delete":
         cli.delete_key(args.name)
+
+
+if __name__ == "__main__":
+    main()

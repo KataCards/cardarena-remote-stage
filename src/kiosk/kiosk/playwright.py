@@ -108,6 +108,7 @@ class PlaywrightKiosk(Kiosk):
             RuntimeError: If engine shutdown fails.
         """
         self.is_running = False
+        self.current_url = ""
         self.controls = None
         await self.engine.close()
 

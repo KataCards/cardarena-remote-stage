@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from ..controls.base import Controls
 from abc import ABC, abstractmethod
 from ..engine.base import Engine
 from typing import Any, Literal
 from uuid import UUID, uuid4
+
+from src.utils import validate_url
 
 
 class Kiosk(BaseModel, ABC):
@@ -60,12 +62,16 @@ class Kiosk(BaseModel, ABC):
     default_page: str = Field(
         ...,
         description="URL to navigate to on start",
-        pattern=r"^(https?://([a-zA-Z0-9.-]+|\[[0-9a-fA-F:]+\])(:[0-9]+)?(/[^\s]*)?|file:///[^\s]*)$",
     )
 
     is_running: bool = Field(
         default=False,
         description="Whether the kiosk is currently running",
+    )
+
+    current_url: str = Field(
+        default="",
+        description="The current URL shown by the kiosk",
     )
 
     kiosk_id: UUID = Field(
@@ -83,6 +89,11 @@ class Kiosk(BaseModel, ABC):
         default_factory=list,
         description="URL whitelist enforced before navigation",
     )
+
+    @field_validator("default_page")
+    @classmethod
+    def _validate_default_page(cls, v: str) -> str:
+        return validate_url(v)
 
     # -------------------------------------------------------------------------
     # Internal Helpers
@@ -239,6 +250,13 @@ class Kiosk(BaseModel, ABC):
         """
         return await self.engine.screenshot()
 
+    async def _sync_current_url(self) -> None:
+        """Refresh current_url from the underlying engine if a page is available."""
+        try:
+            self.current_url = await self.engine.get_current_url()
+        except RuntimeError:
+            self.current_url = ""
+
     # -------------------------------------------------------------------------
     # Navigation Methods
     # -------------------------------------------------------------------------
@@ -262,7 +280,10 @@ class Kiosk(BaseModel, ABC):
         controls = self._require_controls()
         if self.allowed_urls and url not in self.allowed_urls:
             return False
-        return await controls.navigate(url)
+        if not await controls.navigate(url):
+            return False
+        await self._sync_current_url()
+        return True
 
     async def reload(self) -> bool:
         """
@@ -274,7 +295,10 @@ class Kiosk(BaseModel, ABC):
         Raises:
             RuntimeError: If controls are not mounted or a hard failure occurs.
         """
-        return await self._require_controls().reload()
+        if not await self._require_controls().reload():
+            return False
+        await self._sync_current_url()
+        return True
 
     async def go_back(self) -> bool:
         """
@@ -286,7 +310,10 @@ class Kiosk(BaseModel, ABC):
         Raises:
             RuntimeError: If controls are not mounted or a hard failure occurs.
         """
-        return await self._require_controls().go_back()
+        if not await self._require_controls().go_back():
+            return False
+        await self._sync_current_url()
+        return True
 
     async def go_forward(self) -> bool:
         """
@@ -298,7 +325,10 @@ class Kiosk(BaseModel, ABC):
         Raises:
             RuntimeError: If controls are not mounted or a hard failure occurs.
         """
-        return await self._require_controls().go_forward()
+        if not await self._require_controls().go_forward():
+            return False
+        await self._sync_current_url()
+        return True
 
     @abstractmethod
     async def go_home(self) -> bool:

@@ -5,7 +5,8 @@ from ..engine.playwright import PlaywrightEngine
 from .base import Controls
 from pydantic import Field
 from typing import Literal
-import re
+
+from src.utils import validate_url
 
 
 # -------------------------------------------------------------------------
@@ -19,15 +20,6 @@ _SCROLL_MAP: dict[str, tuple[int, int]] = {
     "left": (-1, 0),
     "right": (1, 0),
 }
-
-# Basic URL validation pattern (http/https/file protocols)
-_URL_PATTERN = re.compile(
-    r'^('
-    r'https?://([a-zA-Z0-9.-]+|\[[0-9a-fA-F:]+\])(:[0-9]+)?(/[^\s]*)?'  # http(s)://host[:port][/path]
-    r'|file:///[^\s]*'                                                     # file:///path
-    r')$',
-    re.IGNORECASE
-)
 
 class PlaywrightControls(Controls):
     """
@@ -71,7 +63,11 @@ class PlaywrightControls(Controls):
     @staticmethod
     def _is_valid_url(url: str) -> bool:
         """Validate URL format for basic safety checks."""
-        return bool(_URL_PATTERN.match(url))
+        try:
+            validate_url(url)
+        except ValueError:
+            return False
+        return True
 
     # -------------------------------------------------------------------------
     # Navigation
