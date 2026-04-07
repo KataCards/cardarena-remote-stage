@@ -52,7 +52,7 @@ uv.lock
 # OS
 .DS_Store
 Thumbs.db
-.db
+*.db
 
 # Playwright
 .playwright/
