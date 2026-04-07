@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from collections.abc import Awaitable, Callable
+
 from fastapi import Depends, HTTPException, Request
 
 from .base.principal import Principal, Scope
@@ -18,7 +22,7 @@ async def get_principal(
     return await _provider.verify(credentials, request)
 
 
-def require_scope(scope: Scope):
+def require_scope(scope: Scope) -> Callable[..., Awaitable[Principal]]:
     """Dependency factory that asserts the principal holds a specific scope.
 
     Usage:
@@ -33,8 +37,8 @@ def require_scope(scope: Scope):
     ) -> Principal:
         try:
             principal.require_scope(scope)
-        except ValueError as e:
-            raise HTTPException(status_code=403, detail=str(e))
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Insufficient permissions")
         return principal
 
     # Give the inner function a unique name for distinct dependency nodes.

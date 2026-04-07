@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """API Key authentication module.
 
 Provides database-backed API key authentication with:

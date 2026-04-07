@@ -1,37 +1,37 @@
+from __future__ import annotations
+
 import json
 import secrets
+from typing import Any
 
 from sqlalchemy import delete as sa_delete
 from sqlalchemy import select, update
+from sqlalchemy.engine import Row
 
 from .models import ApiKeyCreate, ApiKeyCreated, ApiKeyRecord
 from ...base.principal import Scope
 from .db import ApiKeyDatabase
 from .utils import hash_key
 
+
 class ApiKeyRepository:
-    """Repository for API key CRUD operations.
-    
-    Encapsulates all database interactions for API keys using SQLAlchemy Core.
-    """
+    """Repository for API key CRUD operations."""
 
-    def __init__(self, db: ApiKeyDatabase) -> None:
-        """Initialize the repository with a database instance.
+    # -------------------------------------------------------------------------
+    # Construction
+    # -------------------------------------------------------------------------
 
-        Args:
-            db: ApiKeyDatabase instance managing engine and table schema
-        """
+    def __init__(self, db: ApiKeyDatabase, secret: str) -> None:
+        """Initialize the repository."""
         self.db = db
+        self._secret = secret
 
-    def _row_to_record(self, row) -> ApiKeyRecord:
-        """Convert a database row to an ApiKeyRecord.
+    # -------------------------------------------------------------------------
+    # Internal Helpers
+    # -------------------------------------------------------------------------
 
-        Args:
-            row: SQLAlchemy row result
-
-        Returns:
-            ApiKeyRecord instance
-        """
+    def _row_to_record(self, row: Row[Any]) -> ApiKeyRecord:
+        """Convert a database row to an API key record."""
         scopes = [Scope(s) for s in json.loads(row.scopes)]
         return ApiKeyRecord(
             id=row.id,
@@ -41,23 +41,14 @@ class ApiKeyRepository:
             revoked=row.revoked,
         )
 
+    # -------------------------------------------------------------------------
+    # CRUD Operations
+    # -------------------------------------------------------------------------
+
     def create(self, entry: ApiKeyCreate) -> ApiKeyCreated:
-        """Create a new API key.
-
-        Generates a secure random key, hashes it immediately, and stores the record.
-        The database generates the created_at timestamp.
-
-        Args:
-            entry: API key creation request
-
-        Returns:
-            ApiKeyCreated with the raw key (only time it's visible)
-
-        Raises:
-            IntegrityError: If a key with the same name already exists
-        """
+        """Create and persist a new API key."""
         raw_key = secrets.token_urlsafe(32)
-        key_hash = hash_key(raw_key)
+        key_hash = hash_key(raw_key, self._secret)
         scopes_json = json.dumps([s.value for s in entry.scopes])
 
         with self.db.engine.begin() as conn:
@@ -85,17 +76,12 @@ class ApiKeyRepository:
             raw_key=raw_key,
         )
 
+    # -------------------------------------------------------------------------
+    # Lookup Operations
+    # -------------------------------------------------------------------------
+
     def _get_by_hash(self, key_hash: str) -> ApiKeyRecord | None:
-        """Retrieve an API key record by its hash.
-
-        Primary lookup path for verify() operations.
-
-        Args:
-            key_hash: SHA-256 hash of the raw key
-
-        Returns:
-            ApiKeyRecord if found, None otherwise
-        """
+        """Return an API key record by its hash."""
         with self.db.engine.connect() as conn:
             result = conn.execute(
                 select(self.db.table).where(self.db.table.c.key_hash == key_hash)
@@ -107,27 +93,18 @@ class ApiKeyRepository:
         return self._row_to_record(result)
 
     def list_all(self) -> list[ApiKeyRecord]:
-        """List all API keys in the database.
-
-        Returns:
-            List of all API key records
-        """
+        """Return all API keys."""
         with self.db.engine.connect() as conn:
             results = conn.execute(select(self.db.table)).fetchall()
 
         return [self._row_to_record(row) for row in results]
 
+    # -------------------------------------------------------------------------
+    # Mutation Operations
+    # -------------------------------------------------------------------------
+
     def revoke(self, name: str) -> bool:
-        """Revoke an API key (soft delete).
-
-        Sets revoked=True, preventing future authentication.
-
-        Args:
-            name: API key name (id)
-
-        Returns:
-            True if key was found and revoked, False if not found
-        """
+        """Revoke an API key."""
         with self.db.engine.begin() as conn:
             result = conn.execute(
                 update(self.db.table)
@@ -137,14 +114,7 @@ class ApiKeyRepository:
         return result.rowcount > 0
 
     def hard_delete(self, name: str) -> bool:
-        """Permanently delete an API key (hard delete).
-
-        Args:
-            name: API key name (id)
-
-        Returns:
-            True if key was found and deleted, False if not found
-        """
+        """Permanently delete an API key."""
         with self.db.engine.begin() as conn:
             result = conn.execute(
                 sa_delete(self.db.table).where(self.db.table.c.id == name)

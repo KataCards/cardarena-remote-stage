@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
 
@@ -8,14 +10,7 @@ from .repository import ApiKeyRepository
 
 
 def build_router(repo: ApiKeyRepository) -> APIRouter:
-    """Build and configure the API keys router.
-
-    Args:
-        repo: Pre-configured API key repository instance
-
-    Returns:
-        Configured APIRouter with all API key endpoints
-    """
+    """Build the API keys router."""
     router = APIRouter(prefix="/security/keys", tags=["API Keys"])
 
 
@@ -24,13 +19,7 @@ def build_router(repo: ApiKeyRepository) -> APIRouter:
         entry: ApiKeyCreate,
         _=Depends(require_scope(Scope.ADMIN)),
     ) -> ApiKeyCreated:
-        """Create a new API key.
-
-        Returns the raw key — this is the ONLY time it will be visible.
-
-        Raises:
-            HTTPException: 409 if a key with the same name already exists
-        """
+        """Create a new API key."""
         try:
             return repo.create(entry)
         except IntegrityError:
@@ -43,10 +32,7 @@ def build_router(repo: ApiKeyRepository) -> APIRouter:
     async def list_keys(
         _=Depends(require_scope(Scope.ADMIN)),
     ) -> list[ApiKeyRecord]:
-        """List all API keys.
-
-        Returns list of all API key records (no raw keys or hashes).
-        """
+        """List all API keys."""
         return repo.list_all()
 
 
@@ -55,13 +41,7 @@ def build_router(repo: ApiKeyRepository) -> APIRouter:
         name: str,
         _=Depends(require_scope(Scope.ADMIN)),
     ) -> None:
-        """Revoke an API key (soft delete).
-
-        Sets revoked=True, preventing future authentication.
-
-        Raises:
-            HTTPException: 404 if key not found
-        """
+        """Revoke an API key."""
         if not repo.revoke(name):
             raise HTTPException(status_code=404, detail=f"API key '{name}' not found")
 
@@ -71,11 +51,7 @@ def build_router(repo: ApiKeyRepository) -> APIRouter:
         name: str,
         _=Depends(require_scope(Scope.ADMIN)),
     ) -> None:
-        """Permanently delete an API key (hard delete).
-
-        Raises:
-            HTTPException: 404 if key not found
-        """
+        """Permanently delete an API key."""
         if not repo.hard_delete(name):
             raise HTTPException(status_code=404, detail=f"API key '{name}' not found")
 

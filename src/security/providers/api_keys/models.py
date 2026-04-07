@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from ...base.principal import Scope
 
 
 class ApiKeyCreate(BaseModel):
     """Request model for creating a new API key."""
+
+    model_config = ConfigDict(frozen=True)
 
     name: str = Field(..., min_length=1, max_length=255)
     scopes: list[Scope]
@@ -15,6 +19,8 @@ class ApiKeyCreate(BaseModel):
 
 class ApiKeyRecord(BaseModel):
     """Database record representation (no key_hash exposed)."""
+
+    model_config = ConfigDict(frozen=True)
 
     id: str
     scopes: list[Scope]
@@ -28,5 +34,7 @@ class ApiKeyCreated(ApiKeyRecord):
     
     Includes the raw key — this is the ONLY time it's visible.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     raw_key: str

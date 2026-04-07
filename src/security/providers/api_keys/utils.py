@@ -1,15 +1,11 @@
+from __future__ import annotations
+
 """Utility functions for API key operations."""
 
 import hashlib
+import hmac
 
 
-def hash_key(raw_key: str) -> str:
-    """Hash a raw API key using SHA-256.
-
-    Args:
-        raw_key: The raw API key string
-
-    Returns:
-        Hexadecimal SHA-256 hash
-    """
-    return hashlib.sha256(raw_key.encode()).hexdigest()
+def hash_key(raw_key: str, secret: str) -> str:
+    """Hash a raw API key with HMAC-SHA256."""
+    return hmac.new(secret.encode(), raw_key.encode(), hashlib.sha256).hexdigest()

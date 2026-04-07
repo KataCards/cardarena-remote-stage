@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from sqlalchemy import (
     Boolean,
     Column,
@@ -12,22 +14,10 @@ from sqlalchemy import (
 
 
 class ApiKeyDatabase:
-    """SQLAlchemy-based database for API key storage.
-
-    Manages the engine, metadata, and table schema for API keys.
-    Call `initialise()` explicitly at app startup to create the schema —
-    the constructor deliberately does not touch the database.
-
-    Note: `apikey_db_type` in settings exists for future extensibility,
-    but SQLite is the only supported backend today.
-    """
+    """SQLAlchemy-based database for API key storage."""
 
     def __init__(self, db_path: str) -> None:
-        """Prepare the engine and table definition without touching the database.
-
-        Args:
-            db_path: Path to the SQLite database file (use ":memory:" for tests)
-        """
+        """Prepare the engine and table definition."""
         self.engine: Engine = create_engine(
             f"sqlite:///{db_path}",
             echo=False,
@@ -38,7 +28,7 @@ class ApiKeyDatabase:
             "api_keys",
             self.metadata,
             Column("id", Text, primary_key=True),  # human-readable name e.g. "dashboard"
-            Column("key_hash", Text, nullable=False),  # sha256 of raw key
+            Column("key_hash", Text, nullable=False),  # HMAC-SHA256 of raw key
             Column("scopes", Text, nullable=False),  # JSON array e.g. ["read", "control"]
             Column("created_at", DateTime(timezone=True), nullable=False, server_default=func.now()),
             Column("expires_at", DateTime(timezone=True), nullable=True),  # None = no expiry

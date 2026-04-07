@@ -1,4 +1,4 @@
-"""Security base module - core primitives for authentication and authorization."""
+from __future__ import annotations
 
 from .principal import Principal, Scope
 from .provider import SecurityProvider
