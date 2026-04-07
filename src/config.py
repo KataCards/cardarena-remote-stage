@@ -1,23 +1,28 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from typing import Annotated
 
 from pydantic import ConfigDict, Field, field_validator
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, NoDecode
 
 from src.utils import validate_url
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables or .env file."""
-    
+
     model_config = ConfigDict(env_file=".env", extra="ignore")
 
-    kiosk_allowed_urls: list[str] = Field(default_factory=list)
+    host: str = "0.0.0.0"
+    port: int = 8000
+    kiosk_allowed_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     kiosk_error_page: str | None = None
+    kiosk_error_pages_dir: str | None = None
     kiosk_default_url: str = "https://example.com"
     kiosk_name: str = "default"
     kiosk_headless: bool = False
+    kiosk_fullscreen: bool = False
 
     @field_validator("kiosk_allowed_urls", mode="before")
     @classmethod

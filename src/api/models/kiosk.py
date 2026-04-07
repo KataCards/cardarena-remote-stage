@@ -1,5 +1,6 @@
-"""Kiosk API request/response models."""
 from __future__ import annotations
+
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
@@ -12,6 +13,7 @@ class KioskStatus(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     uuid: str
+    engine_type: str
     current_url: str
     is_running: bool
     error: str | None = None
@@ -23,6 +25,7 @@ class KioskSummary(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     uuid: str
+    engine_type: str
     is_running: bool
     current_url: str
 
@@ -38,3 +41,37 @@ class NavigateRequest(BaseModel):
     @classmethod
     def _validate_url(cls, v: str) -> str:
         return validate_url(v)
+
+
+class ClickRequest(BaseModel):
+    """Request payload for clicking at coordinates."""
+
+    model_config = ConfigDict(frozen=True)
+
+    x: int
+    y: int
+
+
+class TypeTextRequest(BaseModel):
+    """Request payload for typing text."""
+
+    model_config = ConfigDict(frozen=True)
+
+    text: str
+
+
+class ScrollRequest(BaseModel):
+    """Request payload for scrolling."""
+
+    model_config = ConfigDict(frozen=True)
+
+    direction: Literal["up", "down", "left", "right"]
+    amount: int
+
+
+class PressKeyRequest(BaseModel):
+    """Request payload for pressing a key."""
+
+    model_config = ConfigDict(frozen=True)
+
+    key: str

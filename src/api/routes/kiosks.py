@@ -22,6 +22,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
             summaries.append(
                 KioskSummary(
                     uuid=uuid,
+                    engine_type=kiosk.engine.engine_type,
                     is_running=kiosk.is_running,
                     current_url=kiosk.current_url,
                 )
@@ -35,6 +36,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
             raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
         return KioskStatus(
             uuid=uuid,
+            engine_type=kiosk.engine.engine_type,
             current_url=kiosk.current_url,
             is_running=kiosk.is_running,
         )
