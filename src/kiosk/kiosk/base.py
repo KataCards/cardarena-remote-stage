@@ -11,36 +11,7 @@ from src.utils import validate_url
 
 
 class Kiosk(BaseModel, ABC):
-    """
-    Abstract base class for kiosk browser orchestration.
-
-    This class orchestrates a browser engine and controls, providing URL whitelisting,
-    lifecycle management, and a unified interface for browser interaction in kiosk mode.
-
-    Attributes:
-        engine: The browser engine powering the kiosk.
-        controls: Browser controls for interaction (None until start() is called).
-        default_page: URL to navigate to on start.
-        is_running: Whether the kiosk is currently running.
-        kiosk_id: Unique identifier for this kiosk instance (auto-generated).
-        kiosk_name: Human-readable name for logging and dashboards.
-        allowed_urls: URL whitelist enforced before navigation.
-
-    Example:
-        ```python
-        class MyKiosk(Kiosk):
-            async def start(self):
-                await self.engine.launch()
-                self.controls = MyControls(engine=self.engine)
-                self.is_running = True
-                await self.controls.navigate(self.default_page)
-
-            async def stop(self):
-                self.is_running = False
-                await self.engine.close()
-                self.controls = None
-        ```
-    """
+    """Abstract base class for kiosk browser orchestration."""
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -100,15 +71,7 @@ class Kiosk(BaseModel, ABC):
     # -------------------------------------------------------------------------
 
     def _require_controls(self) -> Controls:
-        """
-        Ensure controls are mounted before performing any interaction.
-
-        Returns:
-            The mounted Controls instance.
-
-        Raises:
-            RuntimeError: If controls are not mounted.
-        """
+        """Return the mounted controls instance."""
         if not self.controls:
             raise RuntimeError(
                 f"Kiosk '{self.kiosk_name}' ({self.kiosk_id}): "
@@ -122,57 +85,21 @@ class Kiosk(BaseModel, ABC):
 
     @abstractmethod
     async def start(self) -> None:
-        """
-        Start the kiosk by launching the engine and mounting controls.
-
-        This method should:
-        - Launch the browser engine
-        - Create and mount the controls instance
-        - Set is_running to True
-        - Navigate to default_page
-
-        Raises:
-            RuntimeError: If the kiosk fails to start.
-        """
+        """Start the kiosk."""
         ...
 
     @abstractmethod
     async def stop(self) -> None:
-        """
-        Stop the kiosk by closing the engine and unmounting controls.
-
-        This method should:
-        - Set is_running to False
-        - Close the browser engine
-        - Set controls to None
-
-        Raises:
-            RuntimeError: If the kiosk fails to stop properly.
-        """
+        """Stop the kiosk."""
         ...
 
     async def restart(self) -> None:
-        """
-        Restart the kiosk by stopping and then starting it.
-
-        Raises:
-            RuntimeError: If restart fails.
-        """
+        """Restart the kiosk."""
         await self.stop()
         await self.start()
 
     async def __aenter__(self) -> "Kiosk":
-        """
-        Async context manager entry point.
-
-        Starts the kiosk when entering the context.
-
-        Returns:
-            The Kiosk instance.
-
-        Raises:
-            RuntimeError: If the kiosk fails to start.
-        """
+        """Start the kiosk in an async context manager."""
         await self.start()
         return self
 
@@ -182,17 +109,7 @@ class Kiosk(BaseModel, ABC):
         exc_val: BaseException | None,
         exc_tb: Any,
     ) -> None:
-        """
-        Async context manager exit point.
-
-        Stops the kiosk when exiting the context, regardless of whether
-        an exception occurred.
-
-        Args:
-            exc_type: The type of exception that occurred, if any.
-            exc_val: The exception instance that occurred, if any.
-            exc_tb: The traceback object, if any.
-        """
+        """Stop the kiosk in an async context manager."""
         await self.stop()
 
     # -------------------------------------------------------------------------
@@ -200,12 +117,7 @@ class Kiosk(BaseModel, ABC):
     # -------------------------------------------------------------------------
 
     async def is_healthy(self) -> bool:
-        """
-        Check if the kiosk is running and the engine is healthy.
-
-        Returns:
-            True if the kiosk is running and engine is healthy, False otherwise.
-        """
+        """Return whether the kiosk is running and healthy."""
         return self.is_running and await self.engine.is_healthy()
 
     # -------------------------------------------------------------------------
@@ -213,17 +125,7 @@ class Kiosk(BaseModel, ABC):
     # -------------------------------------------------------------------------
 
     async def get_status(self) -> dict[str, Any]:
-        """
-        Get the current status of the kiosk.
-
-        Returns:
-            Dictionary containing:
-            - is_running: bool
-            - kiosk_id: str (UUID as string)
-            - kiosk_name: str
-            - engine_type: str
-            - controls_type: str | None
-        """
+        """Return the current kiosk status."""
         return {
             "is_running": self.is_running,
             "kiosk_id": str(self.kiosk_id),
@@ -237,17 +139,7 @@ class Kiosk(BaseModel, ABC):
     # -------------------------------------------------------------------------
 
     async def screenshot(self) -> bytes:
-        """
-        Capture a screenshot of the current page.
-
-        Delegates to engine.screenshot().
-
-        Returns:
-            Screenshot as raw bytes.
-
-        Raises:
-            RuntimeError: If the kiosk is not running or screenshot fails.
-        """
+        """Capture a screenshot of the current page."""
         return await self.engine.screenshot()
 
     async def _sync_current_url(self) -> None:
@@ -262,22 +154,9 @@ class Kiosk(BaseModel, ABC):
     # -------------------------------------------------------------------------
 
     async def navigate(self, url: str) -> bool:
-        """
-        Navigate to the specified URL after validating against allowed_urls.
-
-        This is the sole whitelist enforcement point. If the URL is not in
-        allowed_urls, returns False without raising.
-
-        Args:
-            url: The URL to navigate to.
-
-        Returns:
-            True if navigation succeeded, False if URL not whitelisted or navigation failed.
-
-        Raises:
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Navigate to a URL if it is allowed."""
         controls = self._require_controls()
+        # This is the single whitelist enforcement point for kiosk navigation.
         if self.allowed_urls and url not in self.allowed_urls:
             return False
         if not await controls.navigate(url):
@@ -286,45 +165,21 @@ class Kiosk(BaseModel, ABC):
         return True
 
     async def reload(self) -> bool:
-        """
-        Reload the current page.
-
-        Returns:
-            True if reload succeeded, False if reload failed softly.
-
-        Raises:
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Reload the current page."""
         if not await self._require_controls().reload():
             return False
         await self._sync_current_url()
         return True
 
     async def go_back(self) -> bool:
-        """
-        Navigate back in the browser history.
-
-        Returns:
-            True if navigation succeeded, False if no history available.
-
-        Raises:
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Navigate back in browser history."""
         if not await self._require_controls().go_back():
             return False
         await self._sync_current_url()
         return True
 
     async def go_forward(self) -> bool:
-        """
-        Navigate forward in the browser history.
-
-        Returns:
-            True if navigation succeeded, False if no forward history exists.
-
-        Raises:
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Navigate forward in browser history."""
         if not await self._require_controls().go_forward():
             return False
         await self._sync_current_url()
@@ -332,15 +187,7 @@ class Kiosk(BaseModel, ABC):
 
     @abstractmethod
     async def go_home(self) -> bool:
-        """
-        Navigate to the default page.
-
-        Returns:
-            True if navigation succeeded.
-
-        Raises:
-            RuntimeError: If controls are not mounted or navigation fails.
-        """
+        """Navigate to the default page."""
         ...
 
     # -------------------------------------------------------------------------
@@ -348,35 +195,11 @@ class Kiosk(BaseModel, ABC):
     # -------------------------------------------------------------------------
 
     async def click(self, x: int, y: int) -> bool:
-        """
-        Click at the specified coordinates.
-
-        Args:
-            x: The x-coordinate to click.
-            y: The y-coordinate to click.
-
-        Returns:
-            True if click succeeded, False if click failed softly.
-
-        Raises:
-            ValueError: If coordinates are invalid.
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Click at the given coordinates."""
         return await self._require_controls().click(x, y)
 
     async def type_text(self, text: str) -> bool:
-        """
-        Type the specified text into the currently focused element.
-
-        Args:
-            text: The text to type.
-
-        Returns:
-            True if typing succeeded, False if nothing is focused.
-
-        Raises:
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Type text into the focused element."""
         return await self._require_controls().type_text(text)
 
     async def scroll(
@@ -384,36 +207,11 @@ class Kiosk(BaseModel, ABC):
         direction: Literal["up", "down", "left", "right"],
         amount: int,
     ) -> bool:
-        """
-        Scroll the page in the specified direction by the given amount.
-
-        Args:
-            direction: The direction to scroll.
-            amount: The amount to scroll in pixels.
-
-        Returns:
-            True if scroll succeeded, False if page cannot scroll.
-
-        Raises:
-            ValueError: If amount is invalid.
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Scroll the page in the given direction."""
         return await self._require_controls().scroll(direction, amount)
 
     async def press_key(self, key: str) -> bool:
-        """
-        Press the specified keyboard key.
-
-        Args:
-            key: The key to press (e.g., 'Enter', 'Escape', 'ArrowDown').
-
-        Returns:
-            True if key press succeeded, False if key could not be sent.
-
-        Raises:
-            ValueError: If key is invalid.
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Press a keyboard key."""
         return await self._require_controls().press_key(key)
 
     # -------------------------------------------------------------------------
@@ -421,13 +219,5 @@ class Kiosk(BaseModel, ABC):
     # -------------------------------------------------------------------------
 
     async def wait_for_navigation(self) -> bool:
-        """
-        Wait for a navigation event to complete.
-
-        Returns:
-            True if navigation completed, False if timeout reached.
-
-        Raises:
-            RuntimeError: If controls are not mounted or a hard failure occurs.
-        """
+        """Wait for navigation to complete."""
         return await self._require_controls().wait_for_navigation()

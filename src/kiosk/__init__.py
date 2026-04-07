@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Kiosk - Production-ready browser automation framework.
 
@@ -14,8 +16,15 @@ Public API:
     - PlaywrightKiosk: Playwright-based kiosk orchestration implementation
 """
 
-from .controls import Controls
+from .controls import Controls, PlaywrightControls
 from .engine import Engine, PlaywrightEngine
 from .kiosk import Kiosk, PlaywrightKiosk
 
-__all__ = ["Engine", "Controls", "Kiosk", "PlaywrightEngine", "PlaywrightKiosk"]
+__all__ = [
+    "Engine",
+    "Controls",
+    "Kiosk",
+    "PlaywrightEngine",
+    "PlaywrightControls",
+    "PlaywrightKiosk",
+]

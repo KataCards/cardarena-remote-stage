@@ -13,34 +13,7 @@ from .base import Engine
 
 
 class PlaywrightEngine(Engine):
-    """
-    Playwright-based browser automation engine.
-
-    This engine uses Playwright's async API to manage Chromium, Firefox, or WebKit
-    browsers. It provides full lifecycle management, error handling via response
-    listeners, and cookie/storage management.
-
-    The engine automatically wires a response listener during launch() that monitors
-    HTTP responses and triggers error handling for configured error codes.
-
-    Attributes:
-        browser_type: Browser to launch ('chromium', 'firefox', or 'webkit').
-        headless: Whether to run browser in headless mode (no visible UI).
-
-    Example:
-        ```python
-        async with PlaywrightEngine(
-            browser_type="chromium",
-            headless=True,
-            default_page="https://example.com",
-            error_map={404: "not_found"},
-            resources={"not_found": "/path/to/404.html"},
-            on_error=lambda code: print(f"Error {code}"),
-        ) as engine:
-            url = await engine.get_current_url()
-            screenshot = await engine.screenshot()
-        ```
-    """
+    """Playwright-based browser automation engine."""
 
     browser_type: Literal["chromium", "firefox", "webkit"] = Field(
         default="chromium",
@@ -58,9 +31,9 @@ class PlaywrightEngine(Engine):
     )
 
     engine_type: str = Field(
-        default="",
+        default="playwright",
         description="The type of browser engine",
-        min_length=0,
+        min_length=1,
     )
 
     # Private runtime state - populated during launch(), cleared during close()
@@ -77,26 +50,8 @@ class PlaywrightEngine(Engine):
     # -------------------------------------------------------------------------
 
     async def launch(self) -> None:
-        """
-        Launch the Playwright browser engine.
-
-        Execution order:
-        1. Check if already launched (idempotent guard)
-        2. Start Playwright async instance
-        3. Launch browser using configured browser_type and headless flag
-        4. Create new page
-        5. Wire response listener (monitors HTTP responses, calls handle_error on errors)
-
-        The response listener is critical: it intercepts all HTTP responses and
-        triggers error handling for any status code configured in error_map.
-
-        Note: The response listener is synchronous and calls handle_error directly.
-
-        Raises:
-            RuntimeError: If Playwright fails to start, browser fails to launch,
-                         or navigation to default_page fails.
-        """
-        # Idempotent guard - prevent duplicate browser instances
+        """Launch the Playwright browser engine."""
+        # Idempotent guard to prevent duplicate browser instances.
         if self._browser is not None:
             return
 
@@ -108,12 +63,11 @@ class PlaywrightEngine(Engine):
                 args=self.launch_args,
             )
 
-            # Create page with no viewport to respect launch args like --start-fullscreen
-            # Setting viewport=None allows the browser to use its natural window size
+            # Setting no_viewport=True preserves the browser window size from launch args.
             self._page = await self._browser.new_page(no_viewport=True)
             self._page.on("response", self._handle_response)
 
-            # CDP setWindowBounds has better compatibility than --kiosk on VNC/Linux
+            # CDP fullscreen is more reliable than --kiosk on VNC/Linux.
             if self.fullscreen and not self.headless:
                 cdp = await self._page.context.new_cdp_session(self._page)
                 result = await cdp.send("Browser.getWindowForTarget")
@@ -124,25 +78,12 @@ class PlaywrightEngine(Engine):
                 await cdp.detach()
 
         except Exception as e:
-            # Clean up partial state on failure
+            # Clean up partial state on failure.
             await self.close()
             raise RuntimeError(f"Failed to launch Playwright engine: {e}") from e
 
     async def close(self) -> None:
-        """
-        Close the Playwright browser engine and release all resources.
-
-        Execution order:
-        1. Close page
-        2. Close browser
-        3. Stop Playwright instance
-        4. Reset all private attributes to None
-
-        This method is idempotent - safe to call multiple times.
-
-        Raises:
-            RuntimeError: If cleanup fails (all errors collected and raised together).
-        """
+        """Close the Playwright browser engine."""
         errors: list[str] = []
 
         if self._page is not None:
@@ -177,28 +118,11 @@ class PlaywrightEngine(Engine):
     # -------------------------------------------------------------------------
 
     async def get_current_url(self) -> str:
-        """
-        Get the current URL of the active page.
-
-        Returns:
-            Current page URL as a string.
-
-        Raises:
-            RuntimeError: If engine is not running or page is not available.
-        """
+        """Return the current URL."""
         return self._require_page().url
 
     async def screenshot(self) -> bytes:
-        """
-        Capture a screenshot of the current page.
-
-        Returns:
-            Screenshot as raw PNG bytes.
-
-        Raises:
-            RuntimeError: If engine is not running, page is not available,
-                         or screenshot capture fails.
-        """
+        """Capture a screenshot of the current page."""
         try:
             return await self._require_page().screenshot()
         except Exception as e:
@@ -209,45 +133,18 @@ class PlaywrightEngine(Engine):
     # -------------------------------------------------------------------------
 
     async def get_cookies(self) -> list[dict[str, Any]]:
-        """
-        Retrieve all cookies from the current browser context.
-
-        Returns:
-            List of cookie dictionaries. Each cookie contains keys like:
-            'name', 'value', 'domain', 'path', 'expires', 'httpOnly', 'secure', 'sameSite'.
-
-        Raises:
-            RuntimeError: If engine is not running or page is not available.
-        """
+        """Return all cookies from the current browser context."""
         return await self._require_page().context.cookies()
 
     async def set_cookies(self, cookies: list[dict[str, Any]]) -> None:
-        """
-        Set cookies in the current browser context.
-
-        Args:
-            cookies: List of cookie dictionaries. Each cookie must contain at minimum:
-                    - 'name': Cookie name
-                    - 'value': Cookie value
-                    - 'url' OR 'domain': Cookie scope
-                    Optional keys: 'path', 'expires', 'httpOnly', 'secure', 'sameSite'
-
-        Raises:
-            RuntimeError: If engine is not running, page is not available,
-                         or Playwright fails to set cookies.
-        """
+        """Set cookies in the current browser context."""
         try:
             await self._require_page().context.add_cookies(cookies)
         except Exception as e:
             raise RuntimeError(f"Failed to set cookies: {e}") from e
 
     async def clear_cookies(self) -> None:
-        """
-        Clear all cookies from the current browser context.
-
-        Raises:
-            RuntimeError: If engine is not running or page is not available.
-        """
+        """Clear all cookies from the current browser context."""
         await self._require_page().context.clear_cookies()
 
     # -------------------------------------------------------------------------
@@ -255,28 +152,15 @@ class PlaywrightEngine(Engine):
     # -------------------------------------------------------------------------
 
     async def is_healthy(self) -> bool:
-        """
-        Check if the engine is running and healthy.
-
-        Performs comprehensive health check with exception safety:
-        - Page exists and is not closed
-        - Browser exists and is connected
-
-        Note: Playwright methods can throw exceptions even when checking state,
-        so we wrap in try/except to ensure this method never raises.
-
-        Returns:
-            True if page exists, is not closed, and browser is connected; False otherwise.
-        """
+        """Return whether the engine is healthy."""
         if self._page is None or self._browser is None:
             return False
 
         try:
-            # Check both browser connection AND page state
-            # Both methods can throw if browser/page is in invalid state
+            # Both state checks can raise if Playwright is partially torn down.
             return self._browser.is_connected() and not self._page.is_closed()
         except Exception:
-            # Playwright can throw even on state checks - treat as unhealthy
+            # Treat unexpected Playwright state errors as unhealthy.
             return False
 
     # -------------------------------------------------------------------------
@@ -287,15 +171,7 @@ class PlaywrightEngine(Engine):
         return self.get_page()
 
     def get_page(self) -> Page:
-        """
-        Get the active Playwright Page instance.
-
-        Returns:
-            The active Page instance.
-
-        Raises:
-            RuntimeError: If engine is not running or page is not available.
-        """
+        """Return the active Playwright page."""
         if self._page is None:
             raise RuntimeError(
                 "Engine not running. Call launch() or use async context manager."
@@ -303,14 +179,6 @@ class PlaywrightEngine(Engine):
         return self._page
 
     async def _handle_response(self, response: Response) -> None:
-        """
-        Response event handler for HTTP error monitoring.
-
-        Monitors all HTTP responses and triggers error handling for status codes
-        configured in error_map.
-
-        Args:
-            response: Playwright Response object.
-        """
+        """Handle HTTP responses that match configured error codes."""
         if response.status in self.error_map:
             await self.handle_error(response.status)

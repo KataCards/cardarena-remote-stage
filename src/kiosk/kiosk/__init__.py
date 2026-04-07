@@ -1,4 +1,4 @@
-"""Kiosk module - browser orchestration abstractions."""
+from __future__ import annotations
 
 from .base import Kiosk
 from .playwright import PlaywrightKiosk
