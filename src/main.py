@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-from contextlib import asynccontextmanager
-from uuid import uuid4
-
 from fastapi import FastAPI
 import uvicorn
 
@@ -13,14 +10,10 @@ from src.api.routes.kiosks import build_router as build_kiosks_router
 from src.api.routes.schedule import build_router as build_schedule_router
 from src.api.scheduler import KioskScheduler
 from src.config import get_settings
-from src.kiosk.engine.playwright import PlaywrightEngine
-from src.kiosk.kiosk.playwright import PlaywrightKiosk
+from src.kiosk.kiosk.factory.playwright import PlaywrightKioskFactory
 from src.security.config import get_settings as get_security_settings
-from src.utils import build_error_map
+from src.startup import KioskStartupService
 
-# ---------------------------------------------------------------------------
-# Kiosk registry (module-level — no kiosk construction here)
-# ---------------------------------------------------------------------------
 registry = KioskRegistry()
 scheduler = KioskScheduler(registry)
 
@@ -41,51 +34,9 @@ if _sec.security_provider == "api_key":
     _repo = ApiKeyRepository(_db, _sec.apikey_secret.get_secret_value())
     _security_router = build_security_router(_repo)
 
+_startup = KioskStartupService(registry, PlaywrightKioskFactory())
 
-# ---------------------------------------------------------------------------
-# Lifespan — kiosk construction happens here to avoid import-time failures:
-# 1. PlaywrightKiosk validates default_page URL regex at construction time
-# 2. PlaywrightEngine validates that resource file paths exist at construction time
-# Both would fail at import time if env vars are missing or misconfigured.
-# ---------------------------------------------------------------------------
-@asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: ARG001
-    settings = get_settings()
-    launch_args = ["--kiosk", "--disable-infobars", "--no-first-run"] if settings.kiosk_fullscreen else []
-
-    if settings.kiosk_error_pages_dir:
-        resources, error_map = build_error_map(settings.kiosk_error_pages_dir)
-    else:
-        resources = {"error": settings.kiosk_error_page} if settings.kiosk_error_page else {}
-        error_map = {404: "error", 500: "error"} if settings.kiosk_error_page else {}
-
-    primary_engine = PlaywrightEngine(
-        engine_type="playwright",
-        resources=resources,
-        error_map=error_map,
-        headless=settings.kiosk_headless,
-        fullscreen=settings.kiosk_fullscreen,
-        launch_args=launch_args,
-    )
-    primary_kiosk = PlaywrightKiosk(
-        engine=primary_engine,
-        default_page=settings.kiosk_default_url,
-        kiosk_name=settings.kiosk_name,
-        allowed_urls=settings.kiosk_allowed_urls,
-    )
-
-    registry.register(str(uuid4()), primary_kiosk)
-    for current_kiosk in registry.list_all().values():
-        await current_kiosk.start()
-    yield
-    for current_kiosk in registry.list_all().values():
-        await current_kiosk.stop()
-
-
-# ---------------------------------------------------------------------------
-# App assembly
-# ---------------------------------------------------------------------------
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=_startup.build_lifespan())
 if _security_router is not None:
     app.include_router(_security_router)
 app.include_router(build_health_router(registry))
@@ -95,14 +46,8 @@ app.include_router(build_schedule_router(registry, scheduler))
 
 
 def main() -> None:
-    """Run the FastAPI application with uvicorn."""
     settings = get_settings()
-    uvicorn.run(
-        "src.main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=False,
-    )
+    uvicorn.run("src.main:app", host=settings.host, port=settings.port, reload=False)
 
 
 if __name__ == "__main__":
