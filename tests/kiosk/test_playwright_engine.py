@@ -77,6 +77,7 @@ async def test_handle_response_calls_on_error_for_mapped_document_status(
     mock_response = MagicMock()
     mock_response.status = 404
     mock_response.request.resource_type = "document"
+    mock_response.frame = mock_pw_engine._page.main_frame
 
     await mock_pw_engine._handle_response(mock_response)
     callback.assert_awaited_once_with(404)
@@ -91,6 +92,7 @@ async def test_handle_response_ignores_non_mapped_status(
     mock_response = MagicMock()
     mock_response.status = 200
     mock_response.request.resource_type = "document"
+    mock_response.frame = mock_pw_engine._page.main_frame
 
     await mock_pw_engine._handle_response(mock_response)
     callback.assert_not_awaited()
@@ -106,6 +108,42 @@ async def test_handle_response_ignores_non_document_resource_type(
         mock_response = MagicMock()
         mock_response.status = 404
         mock_response.request.resource_type = resource_type
+        mock_response.frame = mock_pw_engine._page.main_frame
         await mock_pw_engine._handle_response(mock_response)
 
     callback.assert_not_awaited()
+
+
+async def test_handle_response_ignores_sub_frame_document_errors(
+    mock_pw_engine: PlaywrightEngine,
+) -> None:
+    """Iframe 403s (e.g. YouTube consent frames) must not trigger error navigation."""
+    callback = AsyncMock()
+    mock_pw_engine.on_error = callback
+
+    mock_response = MagicMock()
+    mock_response.status = 403
+    mock_response.request.resource_type = "document"
+    mock_response.frame = MagicMock()  # a sub-frame, not main_frame
+
+    mock_pw_engine.error_map = {403: "not_found"}
+
+    await mock_pw_engine._handle_response(mock_response)
+    callback.assert_not_awaited()
+
+
+async def test_handle_response_fires_for_main_frame_document_error(
+    mock_pw_engine: PlaywrightEngine,
+) -> None:
+    """A 403 on the main frame must still trigger error navigation."""
+    callback = AsyncMock()
+    mock_pw_engine.on_error = callback
+    mock_pw_engine.error_map = {403: "not_found"}
+
+    mock_response = MagicMock()
+    mock_response.status = 403
+    mock_response.request.resource_type = "document"
+    mock_response.frame = mock_pw_engine._page.main_frame
+
+    await mock_pw_engine._handle_response(mock_response)
+    callback.assert_awaited_once_with(403)

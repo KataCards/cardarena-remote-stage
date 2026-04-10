@@ -182,8 +182,10 @@ class PlaywrightEngine(Engine):
         return self._page
 
     async def _handle_response(self, response: Response) -> None:
-        """Handle main-document HTTP responses that match configured error codes."""
+        """Handle main-frame HTTP responses that match configured error codes."""
         if response.request.resource_type != "document":
+            return
+        if self._page is not None and response.frame != self._page.main_frame:
             return
         if response.status in self.error_map and self.on_error:
             await self.on_error(response.status)
