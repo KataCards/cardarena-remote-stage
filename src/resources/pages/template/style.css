@@ -73,7 +73,6 @@ body {
     radial-gradient(circle at 88% 14%, hsla(var(--info), 0.18), transparent 30%),
     radial-gradient(circle at 54% 88%, hsla(var(--success), 0.14), transparent 34%),
     linear-gradient(148deg, hsl(var(--background)), hsl(var(--muted)) 134%);
-  overflow-x: hidden;
 }
 
 body::before,
