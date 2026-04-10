@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>403 Forbidden</title>
+  <link rel="stylesheet" href="../../template/style.css">
+</head>
+<body style="--status: 38 92% 50%;">
+  <div class="shell">
+    <div class="halo" aria-hidden="true"></div>
+    <div class="pulse" aria-hidden="true"></div>
+    <main>
+      <div class="page-header">
+        <p class="eyebrow">CardArena Remote Stage</p>
+        <div class="status">Authorization Required</div>
+      </div>
+      <section class="hero" aria-labelledby="error-title">
+        <p class="code">403</p>
+        <h1 id="error-title">Access forbidden</h1>
+        <p class="copy">
+          This screen is available, but the current session is not allowed to open it.
+          Verify the active credentials or switch back to an approved route.
+        </p>
+      </section>
+
+      <section class="panel" aria-label="Recovery guidance">
+        <div class="block">
+          <p class="block-title">What to check</p>
+          <ul>
+            <li>Confirm the kiosk is using a valid API key or whitelisted IP.</li>
+            <li>Make sure the target URL is still included in the allowed list.</li>
+            <li>Retry after the remote stage policy has been updated.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <p class="block-title">Current state</p>
+          <p>The browser reached the service, but the service rejected the request.</p>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="primary-action" type="button" data-action="reload">Retry request</button>
+        <button class="secondary-action" type="button" data-action="back">Go back</button>
+      </div>
+
+      <p class="footer">Static fallback page styled by CardArena-frontend-core.</p>
+    </main>
+  </div>
+  <script defer src="../../template/script.js"></script>
+</body>
+</html>

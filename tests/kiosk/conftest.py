@@ -61,6 +61,9 @@ class ConcreteKiosk(Kiosk):
         self.is_running = False
         self.controls = None
 
+    async def go_home(self) -> bool:
+        return True
+
 
 class ConcretePlaywrightKiosk(PlaywrightKiosk):
     """

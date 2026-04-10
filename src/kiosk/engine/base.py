@@ -180,6 +180,4 @@ class Engine(BaseModel, ABC):
                 f"not found in resources. Available resources: {sorted(self.resources.keys())}"
             )
 
-        if self.on_error:
-            await self.on_error(error_code)
         return self.resources[resource_key]

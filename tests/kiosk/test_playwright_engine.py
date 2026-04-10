@@ -68,7 +68,7 @@ async def test_get_page_raises_before_launch(tmp_html: Path) -> None:
 # _handle_response
 # ---------------------------------------------------------------------------
 
-async def test_handle_response_calls_handle_error_for_mapped_status(
+async def test_handle_response_calls_on_error_for_mapped_document_status(
     mock_pw_engine: PlaywrightEngine,
 ) -> None:
     callback = AsyncMock()
@@ -76,6 +76,7 @@ async def test_handle_response_calls_handle_error_for_mapped_status(
 
     mock_response = MagicMock()
     mock_response.status = 404
+    mock_response.request.resource_type = "document"
 
     await mock_pw_engine._handle_response(mock_response)
     callback.assert_awaited_once_with(404)
@@ -89,6 +90,22 @@ async def test_handle_response_ignores_non_mapped_status(
 
     mock_response = MagicMock()
     mock_response.status = 200
+    mock_response.request.resource_type = "document"
 
     await mock_pw_engine._handle_response(mock_response)
+    callback.assert_not_awaited()
+
+
+async def test_handle_response_ignores_non_document_resource_type(
+    mock_pw_engine: PlaywrightEngine,
+) -> None:
+    callback = AsyncMock()
+    mock_pw_engine.on_error = callback
+
+    for resource_type in ("image", "stylesheet", "script", "font", "xhr"):
+        mock_response = MagicMock()
+        mock_response.status = 404
+        mock_response.request.resource_type = resource_type
+        await mock_pw_engine._handle_response(mock_response)
+
     callback.assert_not_awaited()

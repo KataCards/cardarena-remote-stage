@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated
 
 from pydantic import ConfigDict, Field, field_validator
@@ -35,6 +36,11 @@ class Settings(BaseSettings):
     @field_validator("kiosk_default_url")
     @classmethod
     def _validate_url_protocol(cls, v: str) -> str:
+        if not v.startswith(("http://", "https://", "file://")):
+            resolved = Path(v).resolve()
+            if not resolved.exists():
+                raise ValueError(f"Relative path does not exist: {v}")
+            v = resolved.as_uri()
         return validate_url(v)
 
 

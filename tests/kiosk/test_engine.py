@@ -83,15 +83,6 @@ async def test_handle_error_returns_correct_path(
     assert path == engine_with_resources.resources["not_found"]
 
 
-async def test_handle_error_invokes_on_error_callback(
-    engine_with_resources: ConcreteEngine,
-) -> None:
-    callback = AsyncMock()
-    engine_with_resources.on_error = callback
-    await engine_with_resources.handle_error(404)
-    callback.assert_awaited_once_with(404)
-
-
 async def test_handle_error_no_callback_still_returns_path(
     engine_with_resources: ConcreteEngine,
 ) -> None:
