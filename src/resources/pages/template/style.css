@@ -779,6 +779,7 @@ button:hover {
   }
 }
 
+/* Intentionally after (max-width: 980px) — overrides its padding values for orientation-specific kiosk sizes */
 @media (orientation: landscape) {
   :root {
     --shell-pad: clamp(10px, 1.4vw, 22px);
@@ -812,7 +813,6 @@ button:hover {
     justify-content: center;
     text-align: center;
     padding: 8px 10px;
-    border-top: none;
     border: 1px solid hsl(var(--border));
     border-radius: 12px;
     background: hsl(var(--background));
