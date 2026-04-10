@@ -6,6 +6,7 @@ from pydantic import Field
 from .base import Kiosk
 from typing import Any
 import asyncio
+from pathlib import Path
 
 
 class PlaywrightKiosk(Kiosk):
@@ -46,6 +47,7 @@ class PlaywrightKiosk(Kiosk):
         self.controls = PlaywrightControls(engine=self.engine)
         await self.engine.launch()
         await self._navigate_with_retry(self.default_page)
+        await self._sync_current_url()
         self.is_running = True
 
     async def stop(self) -> None:
@@ -66,7 +68,10 @@ class PlaywrightKiosk(Kiosk):
             return
 
         path = await self.engine.handle_error(error_code)
-        await self.controls.navigate(f"file://{path}")
+        # Convert to absolute path and format as proper file:/// URL
+        absolute_path = Path(path).resolve()
+        file_url = absolute_path.as_uri()
+        await self.controls.navigate(file_url)
 
     # -------------------------------------------------------------------------
     # Navigation with Retry

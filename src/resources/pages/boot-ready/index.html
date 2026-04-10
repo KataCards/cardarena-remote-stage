@@ -33,21 +33,31 @@
           </div>
         </div>
 
-        <aside class="hero-side" aria-label="Boot signal">
-          <div class="status-card">
-            <p class="block-title">Signal</p>
-            <div class="status-line">
-              <strong>Online</strong>
-              <span>System</span>
-            </div>
-            <div class="status-line">
-              <strong>Armed</strong>
-              <span>Inputs</span>
-            </div>
-            <div class="status-line">
-              <strong>Ready</strong>
-              <span>Mode</span>
-            </div>
+        <aside class="hero-side" aria-label="System health and credits">
+          <div class="status-card services-card">
+            <p class="block-title">Services Running</p>
+            <ul class="service-list" aria-label="Live services">
+              <li>
+                <span class="service-name">Remote API</span>
+                <span class="service-state up">Online</span>
+              </li>
+              <li>
+                <span class="service-name">Scheduler</span>
+                <span class="service-state up">Healthy</span>
+              </li>
+              <li>
+                <span class="service-name">Kiosk Input Bus</span>
+                <span class="service-state up">Armed</span>
+              </li>
+            </ul>
+            <p class="service-footnote">All core services report healthy.</p>
+          </div>
+
+          <div class="status-card credit-card">
+            <p class="block-title">Credits</p>
+            <p class="credit-line"><strong>CardArena Remote Stage</strong></p>
+            <p class="credit-line">Maintained by CardArena engineering.</p>
+            <p class="credit-line">UI base uses Geist variable fonts.</p>
           </div>
         </aside>
       </section>

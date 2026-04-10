@@ -440,6 +440,73 @@ button:focus-visible {
   letter-spacing: 0.12em;
 }
 
+.service-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.service-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+}
+
+.service-name {
+  font-size: 14px;
+  font-weight: 650;
+  color: hsl(var(--foreground));
+}
+
+.service-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 78px;
+  padding: 4px 10px;
+  border-radius: var(--chip-radius);
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.service-state.up {
+  color: hsl(var(--success));
+  border-color: hsla(var(--success), 0.26);
+  background: hsla(var(--success), 0.12);
+}
+
+.service-footnote {
+  margin: 0;
+  font-size: 12px;
+  color: hsl(var(--muted-foreground));
+}
+
+.credit-card {
+  gap: 10px;
+}
+
+.credit-line {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: hsl(var(--card-foreground));
+}
+
+.credit-line strong {
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+
 .panel {
   margin-top: clamp(18px, 2.1vw, 30px);
   display: grid;
@@ -790,36 +857,6 @@ button:hover {
   :root {
     --shell-pad: 12px;
     --card-pad: clamp(14px, 4vw, 26px);
-  }
-
-  /* Boot-ready: status card becomes a horizontal row of metrics */
-  .hero-side .status-card {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .hero-side .status-card .block-title {
-    width: 100%;
-    margin-bottom: 0;
-  }
-
-  .hero-side .status-card .status-line {
-    flex: 1 1 80px;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 8px 10px;
-    border: 1px solid hsl(var(--border));
-    border-radius: 12px;
-    background: hsl(var(--background));
-    gap: 4px;
-  }
-
-  .hero-side .status-card .status-line strong {
-    font-size: 14px;
   }
 }
 
