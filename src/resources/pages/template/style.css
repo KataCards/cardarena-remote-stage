@@ -779,6 +779,51 @@ button:hover {
   }
 }
 
+@media (orientation: landscape) {
+  :root {
+    --shell-pad: clamp(10px, 1.4vw, 22px);
+    --card-pad: clamp(14px, 1.8vw, 28px);
+  }
+}
+
+@media (orientation: portrait) {
+  :root {
+    --shell-pad: 12px;
+    --card-pad: clamp(14px, 4vw, 26px);
+  }
+
+  /* Boot-ready: status card becomes a horizontal row of metrics */
+  .hero-side .status-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .hero-side .status-card .block-title {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .hero-side .status-card .status-line {
+    flex: 1 1 80px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px 10px;
+    border-top: none;
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    background: hsl(var(--background));
+    gap: 4px;
+  }
+
+  .hero-side .status-card .status-line strong {
+    font-size: 14px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
