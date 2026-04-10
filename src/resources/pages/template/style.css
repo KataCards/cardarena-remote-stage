@@ -64,7 +64,6 @@ body {
 }
 
 body {
-  height: 100dvh;
   overflow: hidden;
   color: hsl(var(--foreground));
   font-family: var(--font-sans);
