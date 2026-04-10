@@ -223,7 +223,6 @@ main {
     hsl(var(--card));
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
-  overflow: hidden;
 }
 
 main::before,
