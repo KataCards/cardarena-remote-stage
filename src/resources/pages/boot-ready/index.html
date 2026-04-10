@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5e9dc">
+  <title>CardArena Boot Ready</title>
+  <link rel="stylesheet" href="../template/style.css">
+</head>
+<body>
+  <div class="shell">
+    <div class="orb red" aria-hidden="true"></div>
+    <div class="orb blue" aria-hidden="true"></div>
+    <div class="orb amber" aria-hidden="true"></div>
+    <div class="orb teal" aria-hidden="true"></div>
+
+    <main>
+      <div class="page-header">
+        <p class="eyebrow">CardArena Remote Stage</p>
+        <div class="status">Boot complete · API online</div>
+      </div>
+
+      <section class="hero" aria-labelledby="ready-title">
+        <div class="hero-copy">
+          <p class="code">READY</p>
+          <h1 id="ready-title">Bootup worked. The kiosk is ready to take inputs.</h1>
+          <p class="copy">
+            Runtime is healthy, API is responding, and the kiosk is ready for input.
+          </p>
+          <div class="hero-actions" aria-label="Primary actions">
+            <a class="btn btn-primary" href="/">Open control surface</a>
+            <a class="btn btn-secondary" href="/docs">Read boot docs</a>
+          </div>
+        </div>
+
+        <aside class="hero-side" aria-label="Boot signal">
+          <div class="status-card">
+            <p class="block-title">Signal</p>
+            <div class="status-line">
+              <strong>Online</strong>
+              <span>System</span>
+            </div>
+            <div class="status-line">
+              <strong>Armed</strong>
+              <span>Inputs</span>
+            </div>
+            <div class="status-line">
+              <strong>Ready</strong>
+              <span>Mode</span>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <div class="footer">
+        <span><span class="dot" aria-hidden="true"></span>Static boot-ready landing page</span>
+        <span>CardArena startup state is online and ready</span>
+      </div>
+    </main>
+  </div>
+  <script defer src="../template/script.js"></script>
+</body>
+</html>
