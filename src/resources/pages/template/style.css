@@ -265,7 +265,7 @@ main::after {
 }
 
 .page-header .status {
-  margin: 0;
+  margin: 0; /* pre-emptive reset if a default margin is ever added to .status */
 }
 
 .badge {
