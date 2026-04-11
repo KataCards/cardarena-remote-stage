@@ -1,6 +1,8 @@
-# Kiosk
+# cardarena-remote-stage
 
-Kiosk is a self-hosted, remotely controllable browser kiosk system built in Python. It exposes a secured REST API that lets a frontend, automation system, or operator control a browser over the network in real time.
+Part of the [CardArena](https://github.com/KataCards) tournament ecosystem.
+
+cardarena-remote-stage is a self-hosted, remotely controllable browser kiosk system built in Python. It exposes a secured REST API that lets a frontend, automation system, or operator control a browser over the network in real time — purpose-built for driving tournament stage displays in the CardArena ecosystem.
 
 The design is built around three independently pluggable layers. Each layer is defined by an abstract base class; concrete implementations are selected at startup via environment variable. Swapping an implementation — browser engine, auth backend, or any future layer — requires no changes outside that layer.
 
