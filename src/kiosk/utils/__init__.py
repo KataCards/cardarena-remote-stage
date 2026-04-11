@@ -1,4 +1,4 @@
-"""Utility functions and decorators for kiosk."""
+from __future__ import annotations
 
 from .decorators import control_action
 

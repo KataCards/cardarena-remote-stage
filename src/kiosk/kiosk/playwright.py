@@ -6,46 +6,11 @@ from pydantic import Field
 from .base import Kiosk
 from typing import Any
 import asyncio
+from pathlib import Path
 
 
 class PlaywrightKiosk(Kiosk):
-    """
-    Playwright-based kiosk orchestration layer.
-
-    This is the concrete implementation of the abstract Kiosk base class. It wires
-    together PlaywrightEngine and PlaywrightControls into a single orchestration
-    layer exposed to the API.
-
-    Features:
-    - Automatic error page navigation via injected async callback
-    - Retry logic for navigation failures with exponential backoff
-    - Type-safe engine and controls binding
-
-    Attributes:
-        engine: The PlaywrightEngine instance powering the kiosk.
-        controls: The PlaywrightControls instance (None until start() is called).
-        max_retries: Maximum number of navigation retry attempts.
-        retry_delay: Base delay in seconds between retries (exponential backoff).
-
-    Example:
-        ```python
-        async with PlaywrightKiosk(
-            engine=PlaywrightEngine(
-                browser_type="chromium",
-                headless=True,
-                default_page="https://example.com",
-                error_map={404: "not_found"},
-                resources={"not_found": "/path/to/404.html"},
-            ),
-            default_page="https://example.com",
-            kiosk_name="Main Kiosk",
-            max_retries=3,
-            retry_delay=1.0,
-        ) as kiosk:
-            await kiosk.navigate("https://example.com/page")
-            screenshot = await kiosk.screenshot()
-        ```
-    """
+    """Playwright-based kiosk orchestration layer."""
 
     engine: PlaywrightEngine = Field(
         ...,
@@ -70,44 +35,26 @@ class PlaywrightKiosk(Kiosk):
     )
 
     def model_post_init(self, _: Any) -> None:
-        """Wire error callback to engine after initialization."""
-        self.engine.on_error = self._on_error
+        """Wire error callback to engine only when an error map is configured."""
+        if self.engine.error_map:
+            self.engine.on_error = self._on_error
 
     # -------------------------------------------------------------------------
     # Lifecycle Methods
     # -------------------------------------------------------------------------
 
     async def start(self) -> None:
-        """
-        Start the kiosk by launching the engine and mounting controls.
-
-        Execution order:
-        1. Mount PlaywrightControls with engine reference
-        2. Launch the browser engine
-        3. Navigate to default_page with retry logic
-        4. Set is_running to True
-
-        Raises:
-            RuntimeError: If engine launch fails or navigation exhausts all retries.
-        """
+        """Start the kiosk."""
         self.controls = PlaywrightControls(engine=self.engine)
         await self.engine.launch()
         await self._navigate_with_retry(self.default_page)
+        await self._sync_current_url()
         self.is_running = True
 
     async def stop(self) -> None:
-        """
-        Stop the kiosk by closing the engine and unmounting controls.
-
-        Execution order:
-        1. Set is_running to False
-        2. Unmount controls (set to None)
-        3. Close the browser engine
-
-        Raises:
-            RuntimeError: If engine shutdown fails.
-        """
+        """Stop the kiosk."""
         self.is_running = False
+        self.current_url = ""
         self.controls = None
         await self.engine.close()
 
@@ -116,41 +63,23 @@ class PlaywrightKiosk(Kiosk):
     # -------------------------------------------------------------------------
 
     async def _on_error(self, error_code: int) -> None:
-        """
-        Async callback injected into engine for error page navigation.
-
-        Triggered by the engine's response listener when an HTTP error occurs.
-        Navigates to the error page resource mapped to the error code.
-
-        Note:
-            If controls are not mounted (before `start()` is called), the error is silently ignored.
-
-        Args:
-            error_code: HTTP status code that triggered the error.
-        """
+        """Navigate to the configured error page for a response code."""
+        # Ignore early errors before controls are mounted.
         if self.controls is None:
             return
 
         path = await self.engine.handle_error(error_code)
-        await self.controls.navigate(f"file://{path}")
+        # Convert to absolute path and format as proper file:/// URL
+        absolute_path = Path(path).resolve()
+        file_url = absolute_path.as_uri()
+        await self.controls.navigate(file_url)
 
     # -------------------------------------------------------------------------
     # Navigation with Retry
     # -------------------------------------------------------------------------
 
     async def _navigate_with_retry(self, url: str) -> None:
-        """
-        Navigate to URL with exponential backoff retry logic.
-
-        Attempts navigation up to max_retries times. On failure, waits
-        retry_delay * 2^attempt seconds before retrying.
-
-        Args:
-            url: The URL to navigate to.
-
-        Raises:
-            RuntimeError: If all retry attempts are exhausted.
-        """
+        """Navigate to a URL with exponential-backoff retries."""
         controls = self._require_controls()
         for attempt in range(self.max_retries):
             if await controls.navigate(url):
@@ -168,14 +97,6 @@ class PlaywrightKiosk(Kiosk):
     # -------------------------------------------------------------------------
 
     async def go_home(self) -> bool:
-        """
-        Navigate to the default page.
-
-        Returns:
-            True if navigation succeeded.
-
-        Raises:
-            RuntimeError: If controls are not mounted or navigation fails.
-        """
+        """Navigate to the default page."""
         await self._navigate_with_retry(self.default_page)
         return True

@@ -49,6 +49,21 @@ def _kiosk(tmp_html: Path, **kwargs) -> ConcretePlaywrightKiosk:
 # Unit — model_post_init
 # ---------------------------------------------------------------------------
 
+def test_model_post_init_does_not_wire_on_error_when_no_error_map(tmp_html: Path) -> None:
+    """on_error must remain None when the engine has an empty error_map."""
+    engine = PlaywrightEngine(
+        browser_type="chromium",
+        resources={},
+        error_map={},
+    )
+    kiosk = ConcretePlaywrightKiosk(
+        engine=engine,
+        default_page="https://example.com",
+        kiosk_name="test",
+    )
+    assert kiosk.engine.on_error is None
+
+
 def test_model_post_init_wires_on_error(tmp_html: Path) -> None:
     kiosk = _kiosk(tmp_html)
     # on_error is a bound method; compare underlying function and bound instance

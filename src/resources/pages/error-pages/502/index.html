@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>502 Bad Gateway</title>
+  <link rel="stylesheet" href="../../template/style.css">
+</head>
+<body style="--status: 0 84% 60%;">
+  <div class="shell">
+    <div class="halo" aria-hidden="true"></div>
+    <div class="pulse" aria-hidden="true"></div>
+    <main>
+      <div class="page-header">
+        <p class="eyebrow">CardArena Remote Stage</p>
+        <div class="status">Upstream Unavailable</div>
+      </div>
+      <section class="hero" aria-labelledby="error-title">
+        <p class="code">502</p>
+        <h1 id="error-title">Bad gateway</h1>
+        <p class="copy">
+          The remote stage reached a gateway or proxy, but the upstream service behind it
+          did not answer with a usable response. The frontend route may be healthy while a dependency is not.
+        </p>
+      </section>
+
+      <section class="panel" aria-label="Recovery guidance">
+        <div class="block">
+          <p class="block-title">What to check</p>
+          <ul>
+            <li>Confirm the upstream API or proxy target is online and reachable.</li>
+            <li>Review gateway, reverse proxy, or service mesh logs for the failed handoff.</li>
+            <li>Retry once the dependent service is back in a healthy state.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <p class="block-title">Current state</p>
+          <p>The edge accepted the request, but the service behind it failed to return a valid response.</p>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="primary-action" type="button" data-action="reload">Retry request</button>
+        <button class="secondary-action" type="button" data-action="back">Go back</button>
+      </div>
+
+      <p class="footer">Static fallback page styled by CardArena-frontend-core.</p>
+    </main>
+  </div>
+  <script defer src="../../template/script.js"></script>
+</body>
+</html>
