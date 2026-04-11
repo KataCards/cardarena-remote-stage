@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response, StreamingResponse
 
-from src.kiosk.kiosk.base import Kiosk
-
 from ..models import (
     ClickRequest,
     NavigateRequest,

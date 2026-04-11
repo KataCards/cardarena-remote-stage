@@ -12,7 +12,7 @@ _provider = get_active_provider()
 
 async def get_principal(
     request: Request,
-    credentials=Depends(_provider.openapi_scheme),
+    credentials: str | None = Depends(_provider.openapi_scheme),
 ) -> Principal:
     """FastAPI dependency that authenticates the request and returns a Principal.
 

@@ -15,7 +15,7 @@ class IpWhitelistProvider(SecurityProvider):
     # Construction
     # -------------------------------------------------------------------------
 
-    def __init__(self, allowed_ips: list[str]):
+    def __init__(self, allowed_ips: list[str]) -> None:
         """Initialize the provider with an IP whitelist."""
         self.allowed_ips = allowed_ips
         self._scheme = NoCredentialsScheme()

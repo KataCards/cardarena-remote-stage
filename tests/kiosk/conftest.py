@@ -38,7 +38,7 @@ class ConcreteEngine(Engine):
 
 
 class ConcreteControls(Controls):
-    """Minimal Controls subclass that delegates scroll validation to super()."""
+    """Minimal Controls subclass for abstract-base tests."""
 
     async def navigate(self, url: str) -> bool: return True
     async def reload(self) -> bool: return True
@@ -48,7 +48,6 @@ class ConcreteControls(Controls):
     async def type_text(self, text: str) -> bool: return True
 
     async def scroll(self, direction: Any, amount: int) -> bool:
-        await super().scroll(direction, amount)
         return True
 
     async def press_key(self, key: str) -> bool: return True

@@ -180,7 +180,7 @@ async def test_e2e_click(running_kiosk: ConcretePlaywrightKiosk) -> None:
 @pytest.mark.e2e
 async def test_e2e_type_text(running_kiosk: ConcretePlaywrightKiosk) -> None:
     await running_kiosk.navigate("https://example.com")
-    page = running_kiosk.engine.get_page()
+    page = running_kiosk.engine._require_page()
     await page.evaluate("document.body.innerHTML = '<input id=\"i\" />'")
     await page.focus("#i")
     result = await running_kiosk.type_text("hello")
@@ -247,7 +247,7 @@ async def test_e2e_error_page_navigation(tmp_path: Path) -> None:
     )
 
     async with kiosk:
-        page = kiosk.engine.get_page()
+        page = kiosk.engine._require_page()
 
         async def route_handler(route):
             await route.fulfill(status=404, body="not found")

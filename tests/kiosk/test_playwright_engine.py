@@ -58,10 +58,33 @@ async def test_is_healthy_false_before_launch(tmp_html: Path) -> None:
     assert await engine.is_healthy() is False
 
 
-async def test_get_page_raises_before_launch(tmp_html: Path) -> None:
+async def test_require_page_raises_before_launch(tmp_html: Path) -> None:
     engine = _engine(tmp_html)
     with pytest.raises(RuntimeError, match="not running"):
-        engine.get_page()
+        engine._require_page()
+
+
+async def test_close_does_not_raise_when_shutdown_steps_fail(tmp_html: Path) -> None:
+    engine = _engine(tmp_html)
+
+    page = MagicMock()
+    page.close = AsyncMock(side_effect=RuntimeError("page close failed"))
+
+    browser = MagicMock()
+    browser.close = AsyncMock(side_effect=RuntimeError("browser close failed"))
+
+    playwright = MagicMock()
+    playwright.stop = AsyncMock(side_effect=RuntimeError("stop failed"))
+
+    engine._page = page
+    engine._browser = browser
+    engine._playwright = playwright
+
+    await engine.close()  # must not raise
+
+    assert engine._page is None
+    assert engine._browser is None
+    assert engine._playwright is None
 
 
 # ---------------------------------------------------------------------------
