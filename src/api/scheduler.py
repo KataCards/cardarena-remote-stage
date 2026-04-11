@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import TYPE_CHECKING
 
 from .models import AdBreak, ScheduleRequest
 
 if TYPE_CHECKING:
     from .registry import KioskRegistry
+
+
+logger = logging.getLogger(__name__)
 
 
 class KioskScheduler:
@@ -33,6 +37,9 @@ class KioskScheduler:
                     await asyncio.sleep(entry.duration_seconds)
         except asyncio.CancelledError:
             # Preserve task cancellation semantics so callers can shut loops down cleanly.
+            raise
+        except Exception:
+            logger.exception("Schedule loop crashed for kiosk %s", uuid)
             raise
 
     async def run_ad_break(self, uuid: str, ad: AdBreak) -> None:
