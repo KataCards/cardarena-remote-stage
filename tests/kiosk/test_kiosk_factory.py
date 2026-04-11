@@ -61,15 +61,38 @@ def test_build_no_resources_when_no_error_config() -> None:
     assert kiosk.engine.error_map == {}
 
 
-def test_build_fullscreen_sets_launch_args() -> None:
+def test_build_fullscreen_does_not_inject_default_launch_args() -> None:
     kiosk = PlaywrightKioskFactory().build(Settings(kiosk_fullscreen=True))
-    assert "--kiosk" in kiosk.engine.launch_args
-    assert "--disable-infobars" in kiosk.engine.launch_args
+    assert kiosk.engine.launch_args == []
 
 
 def test_build_headless_forwarded_to_engine() -> None:
     kiosk = PlaywrightKioskFactory().build(Settings(kiosk_headless=True))
     assert kiosk.engine.headless is True
+
+
+def test_build_browser_type_forwarded_to_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KIOSK_PLAYWRIGHT_BROWSER_TYPE", "firefox")
+    kiosk = PlaywrightKioskFactory().build(Settings())
+    assert kiosk.engine.browser_type == "firefox"
+
+
+def test_build_custom_launch_args_forwarded_to_engine(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(
+        "KIOSK_PLAYWRIGHT_LAUNCH_ARGS",
+        "--window-size=1920,1080 --incognito",
+    )
+    kiosk = PlaywrightKioskFactory().build(Settings())
+    assert "--window-size=1920,1080" in kiosk.engine.launch_args
+    assert "--incognito" in kiosk.engine.launch_args
+
+
+def test_build_fullscreen_uses_only_explicit_custom_args(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KIOSK_PLAYWRIGHT_LAUNCH_ARGS", "--incognito")
+    kiosk = PlaywrightKioskFactory().build(
+        Settings(kiosk_fullscreen=True)
+    )
+    assert kiosk.engine.launch_args == ["--incognito"]
 
 
 def test_build_no_error_map_when_routing_disabled(tmp_path: Path) -> None:

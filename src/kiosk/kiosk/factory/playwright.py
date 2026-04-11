@@ -4,6 +4,7 @@ from src.config import Settings
 from src.kiosk.engine.playwright import PlaywrightEngine
 from src.kiosk.kiosk.base import Kiosk
 from src.kiosk.kiosk.factory.base import KioskFactory
+from src.kiosk.kiosk.factory.config import get_playwright_factory_settings
 from src.kiosk.kiosk.playwright import PlaywrightKiosk
 from src.utils import build_error_map
 
@@ -12,11 +13,8 @@ class PlaywrightKioskFactory(KioskFactory):
     """Builds a PlaywrightKiosk from application settings."""
 
     def build(self, settings: Settings) -> Kiosk:
-        launch_args = (
-            ["--kiosk", "--disable-infobars", "--no-first-run"]
-            if settings.kiosk_fullscreen
-            else []
-        )
+        factory_settings = get_playwright_factory_settings()
+        launch_args = factory_settings.kiosk_playwright_launch_args
         if settings.kiosk_error_routing and settings.kiosk_error_pages_dir:
             resources, error_map = build_error_map(settings.kiosk_error_pages_dir)
         else:
@@ -24,6 +22,7 @@ class PlaywrightKioskFactory(KioskFactory):
             error_map = {}
 
         engine = PlaywrightEngine(
+            browser_type=factory_settings.kiosk_playwright_browser_type,
             engine_type="playwright",
             resources=resources,
             error_map=error_map,
