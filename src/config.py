@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     kiosk_name: str = "default"
     kiosk_headless: bool = False
     kiosk_fullscreen: bool = False
+    kiosk_error_routing: bool = True
 
     @field_validator("kiosk_allowed_urls", mode="before")
     @classmethod
