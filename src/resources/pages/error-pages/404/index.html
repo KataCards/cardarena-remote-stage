@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>404 Not Found</title>
+  <link rel="stylesheet" href="../../template/style.css">
+</head>
+<body style="--status: 221 83% 53%;">
+  <div class="shell">
+    <div class="halo" aria-hidden="true"></div>
+    <div class="pulse" aria-hidden="true"></div>
+    <main>
+      <div class="page-header">
+        <p class="eyebrow">CardArena Remote Stage</p>
+        <div class="status">Route Missing</div>
+      </div>
+      <section class="hero" aria-labelledby="error-title">
+        <p class="code">404</p>
+        <h1 id="error-title">Page not found</h1>
+        <p class="copy">
+          The kiosk tried to open a route that is no longer available or was never deployed
+          to this environment. Move back to a known page and retry the navigation flow.
+        </p>
+      </section>
+
+      <section class="panel" aria-label="Recovery guidance">
+        <div class="block">
+          <p class="block-title">What to check</p>
+          <ul>
+            <li>Verify the requested path still exists in the active frontend build.</li>
+            <li>Confirm redirects or route prefixes did not change between environments.</li>
+            <li>Use the default kiosk URL if the previous location is no longer valid.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <p class="block-title">Current state</p>
+          <p>The remote stage is reachable, but the requested resource could not be resolved.</p>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="primary-action" type="button" data-action="reload">Retry request</button>
+        <button class="secondary-action" type="button" data-action="back">Go back</button>
+      </div>
+
+      <p class="footer">Static fallback page maintained by KataCards · <a href="https://github.com/KataCards" target="_blank" rel="noopener noreferrer">github.com/KataCards</a></p>
+    </main>
+  </div>
+  <script defer src="../../template/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>500 Internal Server Error</title>
+  <link rel="stylesheet" href="../../template/style.css">
+</head>
+<body style="--status: 0 84% 60%;">
+  <div class="shell">
+    <div class="halo" aria-hidden="true"></div>
+    <div class="pulse" aria-hidden="true"></div>
+    <main>
+      <div class="page-header">
+        <p class="eyebrow">CardArena Remote Stage</p>
+        <div class="status">Service Failure</div>
+      </div>
+      <section class="hero" aria-labelledby="error-title">
+        <p class="code">500</p>
+        <h1 id="error-title">Internal server error</h1>
+        <p class="copy">
+          The request reached the backend, but the service could not complete it successfully.
+          This usually means the route is valid and the failure is happening inside the application.
+        </p>
+      </section>
+
+      <section class="panel" aria-label="Recovery guidance">
+        <div class="block">
+          <p class="block-title">What to check</p>
+          <ul>
+            <li>Inspect the API or application logs for the failing request path.</li>
+            <li>Confirm required environment variables and secrets are present.</li>
+            <li>Retry after the service has recovered or after the deployment has been fixed.</li>
+          </ul>
+        </div>
+        <div class="block">
+          <p class="block-title">Current state</p>
+          <p>The platform accepted the request, but an internal application error interrupted the response.</p>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="primary-action" type="button" data-action="reload">Retry request</button>
+        <button class="secondary-action" type="button" data-action="back">Go back</button>
+      </div>
+
+      <p class="footer">Static fallback page maintained by KataCards · <a href="https://github.com/KataCards" target="_blank" rel="noopener noreferrer">github.com/KataCards</a></p>
+    </main>
+  </div>
+  <script defer src="../../template/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5e9dc">
+  <title>CardArena Boot Ready</title>
+  <link rel="stylesheet" href="../template/style.css">
+</head>
+<body>
+  <div class="shell">
+    <div class="orb red" aria-hidden="true"></div>
+    <div class="orb blue" aria-hidden="true"></div>
+    <div class="orb amber" aria-hidden="true"></div>
+    <div class="orb teal" aria-hidden="true"></div>
+
+    <main>
+      <div class="page-header">
+        <p class="eyebrow">CardArena Remote Stage</p>
+        <div class="status">Boot complete · API online</div>
+      </div>
+
+      <section class="hero" aria-labelledby="ready-title">
+        <div class="hero-copy">
+          <p class="code">READY</p>
+          <h1 id="ready-title">Bootup worked. The kiosk is ready to take inputs.</h1>
+          <p class="copy">
+            Runtime is healthy, API is responding, and the kiosk is ready for input.
+          </p>
+          <div class="hero-actions" aria-label="Primary actions">
+            <a class="btn btn-primary" href="/">Open control surface</a>
+            <a class="btn btn-secondary" href="/docs">Read boot docs</a>
+          </div>
+        </div>
+
+        <aside class="hero-side" aria-label="System health and credits">
+          <div class="status-card services-card">
+            <p class="block-title">Services Running</p>
+            <ul class="service-list" aria-label="Live services">
+              <li>
+                <span class="service-name">Remote API</span>
+                <span class="service-state up">Online</span>
+              </li>
+              <li>
+                <span class="service-name">Scheduler</span>
+                <span class="service-state up">Healthy</span>
+              </li>
+              <li>
+                <span class="service-name">Kiosk Input Bus</span>
+                <span class="service-state up">Armed</span>
+              </li>
+            </ul>
+            <p class="service-footnote">All core services report healthy.</p>
+          </div>
+
+          <div class="status-card credit-card">
+            <p class="block-title">Credits</p>
+            <p class="credit-line"><strong>KataCards Remote Stage</strong></p>
+            <p class="credit-line">Maintained by KataCards.</p>
+            <p class="credit-line"><a href="https://github.com/KataCards" target="_blank" rel="noopener noreferrer">github.com/KataCards</a></p>
+            <p class="credit-line">UI base uses Geist variable fonts.</p>
+          </div>
+        </aside>
+      </section>
+
+      <div class="footer">
+        <span><span class="dot" aria-hidden="true"></span>Static boot-ready landing page</span>
+        <span>KataCards startup state is online and ready</span>
+      </div>
+    </main>
+  </div>
+  <script defer src="../template/script.js"></script>
+</body>
+</html>
