@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from typing import AsyncContextManager, Callable
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -17,7 +18,7 @@ class KioskStartupService:
         self._registry = registry
         self._factory = factory
 
-    def build_lifespan(self):
+    def build_lifespan(self) -> Callable[[FastAPI], AsyncContextManager[None]]:
         """Return the asynccontextmanager lifespan for FastAPI(lifespan=...)."""
 
         @asynccontextmanager
