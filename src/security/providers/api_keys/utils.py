@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-"""Utility functions for API key operations."""
-
 import hashlib
 import hmac
 

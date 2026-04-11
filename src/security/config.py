@@ -6,6 +6,8 @@ from typing import Annotated
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, NoDecode
 
+from src.utils import parse_comma_separated_list
+
 from .base.provider import SecurityProvider
 
 
@@ -24,9 +26,7 @@ class SecuritySettings(BaseSettings):
     @classmethod
     def _parse_comma_separated_ips(cls, v: object) -> list[str]:
         """Parse comma-separated string into list of IP addresses."""
-        if isinstance(v, str):
-            return [ip.strip() for ip in v.split(",") if ip.strip()]
-        return list(v)  # type: ignore[arg-type]
+        return parse_comma_separated_list(v)
 
 
 @lru_cache

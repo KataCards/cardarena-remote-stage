@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import secrets
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import delete as sa_delete
@@ -30,14 +31,21 @@ class ApiKeyRepository:
     # Internal Helpers
     # -------------------------------------------------------------------------
 
+    @staticmethod
+    def _ensure_tz_aware(value: datetime | None) -> datetime | None:
+        """Normalize naive datetimes from SQLite to UTC-aware values."""
+        if value is not None and value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
+
     def _row_to_record(self, row: Row[Any]) -> ApiKeyRecord:
         """Convert a database row to an API key record."""
         scopes = [Scope(s) for s in json.loads(row.scopes)]
         return ApiKeyRecord(
             id=row.id,
             scopes=scopes,
-            created_at=row.created_at,
-            expires_at=row.expires_at,
+            created_at=self._ensure_tz_aware(row.created_at),
+            expires_at=self._ensure_tz_aware(row.expires_at),
             revoked=row.revoked,
         )
 
@@ -67,6 +75,11 @@ class ApiKeyRepository:
                 select(self.db.table).where(self.db.table.c.id == entry.name)
             ).fetchone()
 
+        if result is None:
+            raise RuntimeError(
+                f"Failed to create API key '{entry.name}': inserted row could not be retrieved"
+            )
+
         return ApiKeyCreated(
             id=result.id,
             scopes=entry.scopes,
@@ -80,7 +93,7 @@ class ApiKeyRepository:
     # Lookup Operations
     # -------------------------------------------------------------------------
 
-    def _get_by_hash(self, key_hash: str) -> ApiKeyRecord | None:
+    def get_by_hash(self, key_hash: str) -> ApiKeyRecord | None:
         """Return an API key record by its hash."""
         with self.db.engine.connect() as conn:
             result = conn.execute(

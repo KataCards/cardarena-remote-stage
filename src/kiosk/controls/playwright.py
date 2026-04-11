@@ -55,30 +55,30 @@ class PlaywrightControls(Controls):
     @control_action
     async def navigate(self, url: str) -> bool:
         """Navigate to a URL."""
-        if not url or not isinstance(url, str):
+        if not url:
             raise ValueError(f"Invalid URL: {url}")
         if not self._is_valid_url(url):
             raise ValueError(f"Malformed URL: {url}")
 
-        await self.engine.get_page().goto(url)
+        await self.engine._require_page().goto(url)
         return True
 
     @control_action
     async def reload(self) -> bool:
         """Reload the current page."""
-        await self.engine.get_page().reload()
+        await self.engine._require_page().reload()
         return True
 
     @control_action
     async def go_back(self) -> bool:
         """Navigate back in browser history."""
-        await self.engine.get_page().go_back()
+        await self.engine._require_page().go_back()
         return True
 
     @control_action
     async def go_forward(self) -> bool:
         """Navigate forward in browser history."""
-        await self.engine.get_page().go_forward()
+        await self.engine._require_page().go_forward()
         return True
 
     # -------------------------------------------------------------------------
@@ -91,13 +91,13 @@ class PlaywrightControls(Controls):
         if x < 0 or y < 0:
             raise ValueError(f"Coordinates must be non-negative, got ({x}, {y})")
 
-        await self.engine.get_page().mouse.click(x, y)
+        await self.engine._require_page().mouse.click(x, y)
         return True
 
     @control_action
     async def type_text(self, text: str) -> bool:
         """Type text into the focused element."""
-        await self.engine.get_page().keyboard.type(text)
+        await self.engine._require_page().keyboard.type(text)
         return True
 
     @control_action
@@ -111,7 +111,7 @@ class PlaywrightControls(Controls):
             raise ValueError(f"Scroll amount must be greater than 0, got {amount}")
 
         delta_x_unit, delta_y_unit = _SCROLL_MAP[direction]
-        await self.engine.get_page().mouse.wheel(
+        await self.engine._require_page().mouse.wheel(
             delta_x_unit * amount,
             delta_y_unit * amount,
         )
@@ -120,10 +120,10 @@ class PlaywrightControls(Controls):
     @control_action
     async def press_key(self, key: str) -> bool:
         """Press a keyboard key."""
-        if not key or not isinstance(key, str):
+        if not key:
             raise ValueError(f"Invalid key: {key}")
 
-        await self.engine.get_page().keyboard.press(key)
+        await self.engine._require_page().keyboard.press(key)
         return True
 
     # -------------------------------------------------------------------------
@@ -133,5 +133,5 @@ class PlaywrightControls(Controls):
     @control_action
     async def wait_for_navigation(self) -> bool:
         """Wait for navigation to complete."""
-        await self.engine.get_page().wait_for_load_state()
+        await self.engine._require_page().wait_for_load_state()
         return True

@@ -6,12 +6,13 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from src.kiosk.kiosk.playwright import PlaywrightKiosk
 
+#TODO: CHANGE Playwrigthkiosk to general Kiosk.
 
 class KioskRegistry:
     """Thread-safe registry of active kiosk instances keyed by UUID."""
 
     def __init__(self) -> None:
-        self._kiosks: dict[str, Any] = {}
+        self._kiosks: dict[str, "PlaywrightKiosk"] = {}
         self._lock = threading.Lock()
 
     def register(self, uuid: str, kiosk: "PlaywrightKiosk") -> None:

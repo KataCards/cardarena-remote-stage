@@ -7,7 +7,7 @@ from typing import Annotated
 from pydantic import ConfigDict, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode
 
-from src.utils import validate_url
+from src.utils import parse_comma_separated_list, validate_url
 
 
 class Settings(BaseSettings):
@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
     kiosk_allowed_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
-    kiosk_error_page: str | None = None
     kiosk_error_pages_dir: str | None = None
     kiosk_default_url: str = "https://example.com"
     kiosk_name: str = "default"
@@ -30,9 +29,7 @@ class Settings(BaseSettings):
     @classmethod
     def _parse_comma_separated(cls, v: object) -> list[str]:
         """Parse comma-separated string into list of URLs."""
-        if isinstance(v, str):
-            return [u.strip() for u in v.split(",") if u.strip()]
-        return list(v)  # type: ignore[arg-type]
+        return parse_comma_separated_list(v)
 
     @field_validator("kiosk_default_url")
     @classmethod

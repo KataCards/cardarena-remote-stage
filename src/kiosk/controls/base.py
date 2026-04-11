@@ -71,8 +71,6 @@ class Controls(BaseModel, ABC):
         amount: int,
     ) -> bool:
         """Scroll the page in the given direction."""
-        if amount <= 0:
-            raise ValueError(f"Scroll amount must be greater than 0, got {amount}")
         ...
 
     @abstractmethod

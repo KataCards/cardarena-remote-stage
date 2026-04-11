@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from typing import AsyncContextManager, AsyncGenerator, Callable
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -17,18 +18,22 @@ class KioskStartupService:
         self._registry = registry
         self._factory = factory
 
-    def build_lifespan(self):
+    def build_lifespan(self) -> Callable[[FastAPI], AsyncContextManager[None]]:
         """Return the asynccontextmanager lifespan for FastAPI(lifespan=...)."""
 
         @asynccontextmanager
-        async def lifespan(app: FastAPI):  # noqa: ARG001
+        async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
             settings = get_settings()
             kiosk = self._factory.build(settings)
             self._registry.register(str(uuid4()), kiosk)
-            for current_kiosk in self._registry.list_all().values():
-                await current_kiosk.start()
-            yield
-            for current_kiosk in self._registry.list_all().values():
-                await current_kiosk.stop()
+            started_kiosks = []
+            try:
+                for current_kiosk in self._registry.list_all().values():
+                    await current_kiosk.start()
+                    started_kiosks.append(current_kiosk)
+                yield
+            finally:
+                for current_kiosk in reversed(started_kiosks):
+                    await current_kiosk.stop()
 
         return lifespan

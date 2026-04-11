@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 
 from ..models import AdBreak, ScheduleRequest
+from .utils import get_kiosk_or_404
 from ...security import Scope, require_scope
 
 if TYPE_CHECKING:
@@ -23,8 +24,7 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
         body: ScheduleRequest,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
-        if registry.get(uuid) is None:
-            raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
+        get_kiosk_or_404(registry, uuid)
         # run_schedule is intentionally sync; it only creates the background task.
         scheduler.run_schedule(uuid, body)
         return Response(status_code=204)
@@ -34,8 +34,7 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
-        if registry.get(uuid) is None:
-            raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
+        get_kiosk_or_404(registry, uuid)
         scheduler.cancel(uuid)
         return Response(status_code=204)
 
@@ -45,8 +44,7 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
         body: AdBreak,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
-        if registry.get(uuid) is None:
-            raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
+        get_kiosk_or_404(registry, uuid)
         await scheduler.run_ad_break(uuid, body)
         return Response(status_code=204)
 

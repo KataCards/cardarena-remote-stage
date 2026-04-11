@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 import uvicorn
 
 from src.api.registry import KioskRegistry
@@ -18,7 +18,7 @@ registry = KioskRegistry()
 scheduler = KioskScheduler(registry)
 
 _sec = get_security_settings()
-_security_router = None
+_security_router: APIRouter | None = None
 
 if _sec.security_provider == "api_key":
     from src.security.providers.api_keys.db import ApiKeyDatabase

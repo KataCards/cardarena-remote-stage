@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
 from enum import StrEnum
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 class Scope(StrEnum):
     """Permission scopes for access control."""
@@ -19,7 +21,7 @@ class Principal(BaseModel):
     id: str
     auth_method: str
     scopes: list[Scope]
-    metadata: dict = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     def has_scope(self, scope: Scope) -> bool:
         """Return whether the principal has the given scope."""

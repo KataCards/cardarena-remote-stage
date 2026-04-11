@@ -99,7 +99,7 @@ class TestApiKeyRepositoryCreate:
         entry = ApiKeyCreate(name="hash-check", scopes=[Scope.CONTROL])
         result = repo.create(entry)
 
-        record = repo._get_by_hash(hash_key(result.raw_key, _TEST_SECRET))
+        record = repo.get_by_hash(hash_key(result.raw_key, _TEST_SECRET))
         assert record is not None
         assert record.id == "hash-check"
 
@@ -109,13 +109,21 @@ class TestApiKeyRepositoryGetByHash:
         entry = ApiKeyCreate(name="lookup-key", scopes=[Scope.READ])
         created = repo.create(entry)
 
-        record = repo._get_by_hash(hash_key(created.raw_key, _TEST_SECRET))
+        record = repo.get_by_hash(hash_key(created.raw_key, _TEST_SECRET))
         assert record is not None
         assert record.id == "lookup-key"
 
     def test_returns_none_on_unknown_hash(self, repo: ApiKeyRepository):
-        record = repo._get_by_hash(hash_key("nonexistent-key-value", _TEST_SECRET))
+        record = repo.get_by_hash(hash_key("nonexistent-key-value", _TEST_SECRET))
         assert record is None
+
+    def test_returns_tz_aware_datetimes(self, repo: ApiKeyRepository):
+        entry = ApiKeyCreate(name="tz-check", scopes=[Scope.READ])
+        created = repo.create(entry)
+
+        record = repo.get_by_hash(hash_key(created.raw_key, _TEST_SECRET))
+        assert record is not None
+        assert record.created_at.tzinfo is not None
 
 
 # ---------------------------------------------------------------------------

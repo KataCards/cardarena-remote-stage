@@ -7,7 +7,6 @@ from fastapi.security import APIKeyHeader
 
 from ...base.principal import Principal
 from ...base.provider import SecurityProvider
-from ...config import get_settings
 from .repository import ApiKeyRepository
 from .utils import hash_key
 
@@ -23,7 +22,6 @@ class ApiKeyProvider(SecurityProvider):
         """Initialize the provider."""
         self.repo = repo
         self._secret = secret
-        self.settings = get_settings()
         self._scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
 
     # -------------------------------------------------------------------------
@@ -41,7 +39,7 @@ class ApiKeyProvider(SecurityProvider):
             raise HTTPException(status_code=401, detail="Missing API key")
 
         key_hash = hash_key(credentials, self._secret)
-        record = self.repo._get_by_hash(key_hash)
+        record = self.repo.get_by_hash(key_hash)
         if record is None:
             raise HTTPException(status_code=401, detail="Invalid API key")
 
@@ -50,12 +48,7 @@ class ApiKeyProvider(SecurityProvider):
 
         if record.expires_at is not None:
             now = datetime.now(timezone.utc)
-            # SQLite doesn't store timezone info, so we need to make expires_at timezone-aware
-            # This workaround is only needed for SQLite databases
-            expires_at = record.expires_at
-            if self.settings.apikey_db_type == "sqlite" and expires_at.tzinfo is None:
-                expires_at = expires_at.replace(tzinfo=timezone.utc)
-            if now >= expires_at:
+            if now >= record.expires_at:
                 raise HTTPException(status_code=401, detail="API key has expired")
 
         return Principal(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from typing import TYPE_CHECKING
 
 from .models import AdBreak, ScheduleRequest
@@ -9,12 +10,15 @@ if TYPE_CHECKING:
     from .registry import KioskRegistry
 
 
+logger = logging.getLogger(__name__)
+
+
 class KioskScheduler:
     """Manages one background asyncio.Task per kiosk UUID for continuous schedule loops."""
 
     def __init__(self, registry: "KioskRegistry") -> None:
         self._registry = registry
-        self._tasks: dict[str, asyncio.Task] = {}
+        self._tasks: dict[str, asyncio.Task[None]] = {}
 
     def run_schedule(self, uuid: str, request: ScheduleRequest) -> None:
         """Start (or replace) a continuous schedule loop for the given kiosk."""
@@ -29,10 +33,19 @@ class KioskScheduler:
         try:
             while True:
                 for entry in sorted_entries:
-                    await kiosk.navigate(entry.url)
+                    if not await kiosk.navigate(entry.url):
+                        logger.error(
+                            "Schedule navigation failed for kiosk %s (url=%s)",
+                            uuid,
+                            entry.url,
+                        )
+                        continue
                     await asyncio.sleep(entry.duration_seconds)
         except asyncio.CancelledError:
             # Preserve task cancellation semantics so callers can shut loops down cleanly.
+            raise
+        except Exception:
+            logger.exception("Schedule loop crashed for kiosk %s", uuid)
             raise
 
     async def run_ad_break(self, uuid: str, ad: AdBreak) -> None:

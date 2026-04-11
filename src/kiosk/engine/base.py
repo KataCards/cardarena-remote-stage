@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
-from collections.abc import Callable
 from abc import ABC, abstractmethod
-from typing import Any, Awaitable
+from collections.abc import Callable
 from pathlib import Path
+from types import TracebackType
+from typing import Any, Awaitable
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Engine(BaseModel, ABC):
@@ -51,7 +53,7 @@ class Engine(BaseModel, ABC):
     @classmethod
     def validate_error_codes(cls, v: dict[int, str]) -> dict[int, str]:
         """Validate that all error codes are valid HTTP status codes."""
-        for code in v.keys():
+        for code in v:
             if not (100 <= code <= 599):
                 raise ValueError(
                     f"Invalid HTTP status code: {code}. Must be between 100 and 599."
@@ -102,9 +104,9 @@ class Engine(BaseModel, ABC):
 
     async def __aexit__(
         self,
-        exc_type,
-        exc_val,
-        exc_tb,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Close the engine in an async context manager."""
         await self.close()
@@ -173,11 +175,4 @@ class Engine(BaseModel, ABC):
             )
 
         resource_key = self.error_map[error_code]
-
-        if resource_key not in self.resources:
-            raise ValueError(
-                f"Resource key '{resource_key}' (for error code {error_code}) "
-                f"not found in resources. Available resources: {sorted(self.resources.keys())}"
-            )
-
         return self.resources[resource_key]

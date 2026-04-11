@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import asyncio
+import logging
+from pathlib import Path
+from typing import Any
+
+from pydantic import Field
+
+from .base import Kiosk
 from ..controls.playwright import PlaywrightControls
 from ..engine.playwright import PlaywrightEngine
-from pydantic import Field
-from .base import Kiosk
-from typing import Any
-import asyncio
-from pathlib import Path
+
+
+logger = logging.getLogger(__name__)
 
 
 class PlaywrightKiosk(Kiosk):
@@ -72,7 +78,14 @@ class PlaywrightKiosk(Kiosk):
         # Convert to absolute path and format as proper file:/// URL
         absolute_path = Path(path).resolve()
         file_url = absolute_path.as_uri()
-        await self.controls.navigate(file_url)
+        try:
+            await self.controls.navigate(file_url)
+        except Exception:
+            logger.exception(
+                "Failed to navigate to error page for code %s at %s",
+                error_code,
+                file_url,
+            )
 
     # -------------------------------------------------------------------------
     # Navigation with Retry

@@ -1,6 +1,7 @@
 """Unit tests for PlaywrightControls."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
@@ -65,14 +66,14 @@ async def test_navigate_ftp_raises(mock_pw_controls: PlaywrightControls) -> None
 async def test_navigate_https_calls_goto(mock_pw_controls: PlaywrightControls) -> None:
     result = await mock_pw_controls.navigate("https://example.com")
     assert result is True
-    mock_pw_controls.engine.get_page().goto.assert_awaited_once_with("https://example.com")
+    mock_pw_controls.engine._require_page().goto.assert_awaited_once_with("https://example.com")
 
 
 async def test_navigate_file_url_calls_goto(mock_pw_controls: PlaywrightControls, tmp_html) -> None:
     url = f"file://{tmp_html}"
     result = await mock_pw_controls.navigate(url)
     assert result is True
-    mock_pw_controls.engine.get_page().goto.assert_awaited_once_with(url)
+    mock_pw_controls.engine._require_page().goto.assert_awaited_once_with(url)
 
 
 
@@ -83,19 +84,21 @@ async def test_navigate_file_url_calls_goto(mock_pw_controls: PlaywrightControls
 
 async def test_scroll_down_dispatches_wheel(mock_pw_controls: PlaywrightControls) -> None:
     await mock_pw_controls.scroll("down", 200)
-    mock_pw_controls.engine.get_page().mouse.wheel.assert_awaited_once_with(0, 200)
+    mock_pw_controls.engine._require_page().mouse.wheel.assert_awaited_once_with(0, 200)
 
 
 async def test_scroll_left_dispatches_wheel(mock_pw_controls: PlaywrightControls) -> None:
     await mock_pw_controls.scroll("left", 100)
-    mock_pw_controls.engine.get_page().mouse.wheel.assert_awaited_once_with(-100, 0)
+    mock_pw_controls.engine._require_page().mouse.wheel.assert_awaited_once_with(-100, 0)
 
 
 # ---------------------------------------------------------------------------
 # control_action decorator behaviour
 # ---------------------------------------------------------------------------
 
-async def test_soft_exception_returns_false(mock_pw_engine: PlaywrightEngine) -> None:
+async def test_soft_exception_returns_false_and_logs(
+    mock_pw_engine: PlaywrightEngine, caplog: pytest.LogCaptureFixture
+) -> None:
     """Unexpected exceptions from a control method must be swallowed → False."""
 
     class BrokenControls(PlaywrightControls):
@@ -104,8 +107,11 @@ async def test_soft_exception_returns_false(mock_pw_engine: PlaywrightEngine) ->
             raise ConnectionError("network gone")
 
     controls = BrokenControls(engine=mock_pw_engine)
-    result = await controls.navigate("http://example.com")
+    with caplog.at_level(logging.ERROR):
+        result = await controls.navigate("http://example.com")
+
     assert result is False
+    assert "Control action 'navigate' failed" in caplog.text
 
 
 async def test_value_error_propagates(mock_pw_controls: PlaywrightControls) -> None:
@@ -114,7 +120,7 @@ async def test_value_error_propagates(mock_pw_controls: PlaywrightControls) -> N
 
 
 async def test_runtime_error_propagates(tmp_html) -> None:
-    """get_page() raises RuntimeError when engine has no page (before launch)."""
+    """_require_page() raises RuntimeError when engine has no page (before launch)."""
     engine = PlaywrightEngine(
         browser_type="chromium",
         resources={"not_found": str(tmp_html)},
@@ -206,7 +212,7 @@ class TestPlaywrightControlsHeadless:
         self, headless_controls: PlaywrightControls, local_http_server: str
     ) -> None:
         await headless_controls.navigate(f"{local_http_server}/index.html")
-        page = headless_controls.engine.get_page()
+        page = headless_controls.engine._require_page()
         await page.click("#inp")
         assert await headless_controls.type_text("hello") is True
 

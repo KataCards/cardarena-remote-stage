@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..models import KioskStatus, KioskSummary
+from .utils import get_kiosk_or_404
 from ...security import Scope, require_scope
 
 if TYPE_CHECKING:
@@ -17,23 +18,19 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
 
     @router.get("/kiosks", response_model=list[KioskSummary])
     async def list_kiosks(_=Depends(require_scope(Scope.READ))) -> list[KioskSummary]:
-        summaries = []
-        for uuid, kiosk in registry.list_all().items():
-            summaries.append(
-                KioskSummary(
-                    uuid=uuid,
-                    engine_type=kiosk.engine.engine_type,
-                    is_running=kiosk.is_running,
-                    current_url=kiosk.current_url,
-                )
+        return [
+            KioskSummary(
+                uuid=uuid,
+                engine_type=kiosk.engine.engine_type,
+                is_running=kiosk.is_running,
+                current_url=kiosk.current_url,
             )
-        return summaries
+            for uuid, kiosk in registry.list_all().items()
+        ]
 
     @router.get("/kiosks/{uuid}", response_model=KioskStatus)
     async def get_kiosk(uuid: str, _=Depends(require_scope(Scope.READ))) -> KioskStatus:
-        kiosk = registry.get(uuid)
-        if kiosk is None:
-            raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
+        kiosk = get_kiosk_or_404(registry, uuid)
         return KioskStatus(
             uuid=uuid,
             engine_type=kiosk.engine.engine_type,

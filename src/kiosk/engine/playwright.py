@@ -1,15 +1,21 @@
 from __future__ import annotations
 
-from pydantic import Field, PrivateAttr
+import logging
+from typing import Any, Literal
+
 from playwright.async_api import (
-    async_playwright,
-    Playwright,
     Browser,
     Page,
+    Playwright,
     Response,
+    async_playwright,
 )
-from typing import Any, Literal
+from pydantic import Field, PrivateAttr
+
 from .base import Engine
+
+
+logger = logging.getLogger(__name__)
 
 
 class PlaywrightEngine(Engine):
@@ -87,34 +93,29 @@ class PlaywrightEngine(Engine):
 
     async def close(self) -> None:
         """Close the Playwright browser engine."""
-        errors: list[str] = []
-
         if self._page is not None:
             try:
                 await self._page.close()
-            except Exception as e:
-                errors.append(f"Failed to close page: {e}")
+            except Exception:
+                logger.exception("Failed to close page during engine shutdown")
             finally:
                 self._page = None
 
         if self._browser is not None:
             try:
                 await self._browser.close()
-            except Exception as e:
-                errors.append(f"Failed to close browser: {e}")
+            except Exception:
+                logger.exception("Failed to close browser during engine shutdown")
             finally:
                 self._browser = None
 
         if self._playwright is not None:
             try:
                 await self._playwright.stop()
-            except Exception as e:
-                errors.append(f"Failed to stop Playwright: {e}")
+            except Exception:
+                logger.exception("Failed to stop Playwright during engine shutdown")
             finally:
                 self._playwright = None
-
-        if errors:
-            raise RuntimeError(f"Errors during engine shutdown: {'; '.join(errors)}")
 
     # -------------------------------------------------------------------------
     # Page State Methods
@@ -167,14 +168,10 @@ class PlaywrightEngine(Engine):
             return False
 
     # -------------------------------------------------------------------------
-    # Public Page Access
+    # Page Access
     # -------------------------------------------------------------------------
 
     def _require_page(self) -> Page:
-        return self.get_page()
-
-    def get_page(self) -> Page:
-        """Return the active Playwright page."""
         if self._page is None:
             raise RuntimeError(
                 "Engine not running. Call launch() or use async context manager."
