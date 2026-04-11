@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from src.kiosk.kiosk.playwright import PlaywrightKiosk
 
+#TODO: CHANGE Playwrigthkiosk to general Kiosk.
 
 class KioskRegistry:
     """Thread-safe registry of active kiosk instances keyed by UUID."""

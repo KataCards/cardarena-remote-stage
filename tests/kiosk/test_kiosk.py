@@ -101,27 +101,6 @@ async def test_empty_allowed_urls_allows_any() -> None:
 
 
 # ---------------------------------------------------------------------------
-# get_status
-# ---------------------------------------------------------------------------
-
-async def test_get_status_has_correct_keys() -> None:
-    status = await _kiosk().get_status()
-    assert set(status.keys()) == {
-        "is_running", "kiosk_id", "kiosk_name", "engine_type", "controls_type"
-    }
-
-
-async def test_get_status_kiosk_id_is_str() -> None:
-    status = await _kiosk().get_status()
-    assert isinstance(status["kiosk_id"], str)
-
-
-async def test_get_status_controls_type_none_when_no_controls() -> None:
-    status = await _kiosk().get_status()
-    assert status["controls_type"] is None
-
-
-# ---------------------------------------------------------------------------
 # is_healthy
 # ---------------------------------------------------------------------------
 

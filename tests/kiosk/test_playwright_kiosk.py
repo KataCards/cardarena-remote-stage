@@ -1,6 +1,7 @@
 """Unit and E2E tests for PlaywrightKiosk."""
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, patch  # AsyncMock used for asyncio.sleep patch
 
@@ -22,6 +23,13 @@ class FailingControls(PlaywrightControls):
     async def navigate(self, url: str) -> bool:
         self._navigate_calls += 1
         return False
+
+
+class RaisingControls(PlaywrightControls):
+    """Controls that raise while navigating."""
+
+    async def navigate(self, url: str) -> bool:
+        raise RuntimeError("navigation unavailable")
 
 
 # ---------------------------------------------------------------------------
@@ -97,6 +105,18 @@ async def test_on_error_silently_ignores_if_no_controls(tmp_html: Path) -> None:
     kiosk = _kiosk(tmp_html)
     assert kiosk.controls is None
     await kiosk._on_error(404)  # must not raise
+
+
+async def test_on_error_logs_when_error_page_navigation_fails(
+    tmp_html: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    kiosk = _kiosk(tmp_html)
+    kiosk.controls = RaisingControls(engine=kiosk.engine)
+
+    with caplog.at_level(logging.ERROR):
+        await kiosk._on_error(404)
+
+    assert "Failed to navigate to error page for code 404" in caplog.text
 
 
 # ---------------------------------------------------------------------------

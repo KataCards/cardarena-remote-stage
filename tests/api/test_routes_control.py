@@ -86,6 +86,17 @@ def test_reload_kiosk_failure_returns_500() -> None:
     assert response.status_code == 500
 
 
+def test_go_home_runtime_error_returns_500() -> None:
+    kiosk = MagicMock()
+    kiosk.go_home = AsyncMock(side_effect=RuntimeError("navigation failed"))
+    registry = _registry_with(kiosk)
+    response = TestClient(
+        _make_app(registry, [Scope.CONTROL]), raise_server_exceptions=False
+    ).post("/kiosks/uuid-1/go-home")
+    assert response.status_code == 500
+    kiosk.go_home.assert_called_once_with()
+
+
 def test_control_requires_control_scope() -> None:
     app = FastAPI()
     app.include_router(build_router(KioskRegistry()))

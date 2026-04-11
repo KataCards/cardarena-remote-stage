@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
-from ..controls.base import Controls
 from abc import ABC, abstractmethod
-from ..engine.base import Engine
-from typing import Any, Literal
+from types import TracebackType
+from typing import Literal
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from ..controls.base import Controls
+from ..engine.base import Engine
 from src.utils import validate_url
 
 
@@ -72,7 +74,7 @@ class Kiosk(BaseModel, ABC):
 
     def _require_controls(self) -> Controls:
         """Return the mounted controls instance."""
-        if not self.controls:
+        if self.controls is None:
             raise RuntimeError(
                 f"Kiosk '{self.kiosk_name}' ({self.kiosk_id}): "
                 "Controls not mounted. Call start() first."
@@ -107,7 +109,7 @@ class Kiosk(BaseModel, ABC):
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
-        exc_tb: Any,
+        exc_tb: TracebackType | None,
     ) -> None:
         """Stop the kiosk in an async context manager."""
         await self.stop()
@@ -119,20 +121,6 @@ class Kiosk(BaseModel, ABC):
     async def is_healthy(self) -> bool:
         """Return whether the kiosk is running and healthy."""
         return self.is_running and await self.engine.is_healthy()
-
-    # -------------------------------------------------------------------------
-    # Status Methods
-    # -------------------------------------------------------------------------
-
-    async def get_status(self) -> dict[str, Any]:
-        """Return the current kiosk status."""
-        return {
-            "is_running": self.is_running,
-            "kiosk_id": str(self.kiosk_id),
-            "kiosk_name": self.kiosk_name,
-            "engine_type": self.engine.engine_type,
-            "controls_type": type(self.controls).__name__ if self.controls else None,
-        }
 
     # -------------------------------------------------------------------------
     # Page Methods
