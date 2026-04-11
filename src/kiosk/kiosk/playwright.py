@@ -35,8 +35,9 @@ class PlaywrightKiosk(Kiosk):
     )
 
     def model_post_init(self, _: Any) -> None:
-        """Wire error callback to engine after initialization."""
-        self.engine.on_error = self._on_error
+        """Wire error callback to engine only when an error map is configured."""
+        if self.engine.error_map:
+            self.engine.on_error = self._on_error
 
     # -------------------------------------------------------------------------
     # Lifecycle Methods
