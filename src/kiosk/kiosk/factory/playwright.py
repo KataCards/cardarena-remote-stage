@@ -17,7 +17,7 @@ class PlaywrightKioskFactory(KioskFactory):
             if settings.kiosk_fullscreen
             else []
         )
-        if settings.kiosk_error_pages_dir:
+        if settings.kiosk_error_routing and settings.kiosk_error_pages_dir:
             resources, error_map = build_error_map(settings.kiosk_error_pages_dir)
         else:
             resources = {}

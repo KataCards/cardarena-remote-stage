@@ -70,3 +70,16 @@ def test_build_fullscreen_sets_launch_args() -> None:
 def test_build_headless_forwarded_to_engine() -> None:
     kiosk = PlaywrightKioskFactory().build(Settings(kiosk_headless=True))
     assert kiosk.engine.headless is True
+
+
+def test_build_no_error_map_when_routing_disabled(tmp_path: Path) -> None:
+    """error_routing=False must produce empty resources/error_map even if dir is set."""
+    page_404 = tmp_path / "404"
+    page_404.mkdir()
+    (page_404 / "index.html").write_text("<html><body>Not Found</body></html>")
+
+    kiosk = PlaywrightKioskFactory().build(
+        Settings(kiosk_error_pages_dir=str(tmp_path), kiosk_error_routing=False)
+    )
+    assert kiosk.engine.resources == {}
+    assert kiosk.engine.error_map == {}
