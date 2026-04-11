@@ -74,7 +74,7 @@ def test_post_schedule_cancel_returns_204() -> None:
 def test_post_ad_break_returns_204() -> None:
     registry = _registry_with_kiosk()
     scheduler = _make_scheduler()
-    body = {"url": "https://ad.com", "duration_seconds": 0}
+    body = {"url": "https://ad.com", "duration_seconds": 1}
     response = TestClient(_make_app(registry, scheduler, [Scope.CONTROL])).post(
         "/kiosks/uuid-1/ad-break", json=body
     )

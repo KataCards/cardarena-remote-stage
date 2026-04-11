@@ -1,8 +1,12 @@
 """Shared fixtures for the kiosk test suite."""
 from __future__ import annotations
 
+import functools
+import http.server
+import socketserver
+import threading
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -145,6 +149,57 @@ def mock_pw_engine(tmp_html: Path) -> PlaywrightEngine:
 def mock_pw_controls(mock_pw_engine: PlaywrightEngine) -> PlaywrightControls:
     """PlaywrightControls backed by mock_pw_engine."""
     return PlaywrightControls(engine=mock_pw_engine)
+
+
+@pytest.fixture
+def local_http_server(tmp_path: Path) -> Generator[str, None, None]:
+    """
+    Local HTTP server serving tmp_path on a random port.
+    Yields the base URL (http://127.0.0.1:{port}).
+    Creates two test pages for navigation/interaction tests.
+    """
+    (tmp_path / "index.html").write_text(
+        "<html><body style='height:2000px;width:2000px;'>"
+        "<button id='btn' onclick='this.innerText=\"clicked\"'>Click me</button>"
+        "<input id='inp' type='text'>"
+        "</body></html>"
+    )
+    (tmp_path / "page2.html").write_text("<html><body>Page 2</body></html>")
+
+    handler = functools.partial(
+        http.server.SimpleHTTPRequestHandler,
+        directory=str(tmp_path),
+    )
+    # Suppress request logs from the test output
+    handler.log_message = lambda *_: None  # type: ignore[method-assign]
+
+    socketserver.TCPServer.allow_reuse_address = True
+    with socketserver.TCPServer(("127.0.0.1", 0), handler) as httpd:
+        port = httpd.server_address[1]
+        thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+        thread.start()
+        yield f"http://127.0.0.1:{port}"
+        httpd.shutdown()
+
+
+@pytest.fixture
+async def headless_engine(tmp_html: Path) -> AsyncGenerator[PlaywrightEngine, None]:
+    """PlaywrightEngine backed by real headless Chromium — no display required."""
+    engine = PlaywrightEngine(
+        browser_type="chromium",
+        headless=True,
+        resources={"not_found": str(tmp_html)},
+        error_map={404: "not_found"},
+    )
+    await engine.launch()
+    yield engine
+    await engine.close()
+
+
+@pytest.fixture
+def headless_controls(headless_engine: PlaywrightEngine) -> PlaywrightControls:
+    """PlaywrightControls backed by a real headless Chromium engine."""
+    return PlaywrightControls(engine=headless_engine)
 
 
 @pytest.fixture

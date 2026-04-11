@@ -30,14 +30,17 @@ def db() -> ApiKeyDatabase:
     return database
 
 
+_TEST_SECRET = "test-secret-value"
+
+
 @pytest.fixture
 def repo(db: ApiKeyDatabase) -> ApiKeyRepository:
-    return ApiKeyRepository(db)
+    return ApiKeyRepository(db, _TEST_SECRET)
 
 
 @pytest.fixture
 def provider(repo: ApiKeyRepository) -> ApiKeyProvider:
-    return ApiKeyProvider(repo)
+    return ApiKeyProvider(repo, _TEST_SECRET)
 
 
 @pytest.fixture
@@ -96,7 +99,7 @@ class TestApiKeyRepositoryCreate:
         entry = ApiKeyCreate(name="hash-check", scopes=[Scope.CONTROL])
         result = repo.create(entry)
 
-        record = repo._get_by_hash(hash_key(result.raw_key))
+        record = repo._get_by_hash(hash_key(result.raw_key, _TEST_SECRET))
         assert record is not None
         assert record.id == "hash-check"
 
@@ -106,12 +109,12 @@ class TestApiKeyRepositoryGetByHash:
         entry = ApiKeyCreate(name="lookup-key", scopes=[Scope.READ])
         created = repo.create(entry)
 
-        record = repo._get_by_hash(hash_key(created.raw_key))
+        record = repo._get_by_hash(hash_key(created.raw_key, _TEST_SECRET))
         assert record is not None
         assert record.id == "lookup-key"
 
     def test_returns_none_on_unknown_hash(self, repo: ApiKeyRepository):
-        record = repo._get_by_hash(hash_key("nonexistent-key-value"))
+        record = repo._get_by_hash(hash_key("nonexistent-key-value", _TEST_SECRET))
         assert record is None
 
 

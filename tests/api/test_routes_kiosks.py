@@ -26,8 +26,9 @@ def _make_app(registry: KioskRegistry, scopes: list[Scope]) -> FastAPI:
 def _make_fake_kiosk(url: str = "https://example.com", running: bool = True) -> MagicMock:
     kiosk = MagicMock()
     kiosk.is_running = running
+    kiosk.current_url = url
     kiosk.engine = MagicMock()
-    kiosk.engine.get_current_url = AsyncMock(return_value=url)
+    kiosk.engine.engine_type = "chromium"
     return kiosk
 
 

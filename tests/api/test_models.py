@@ -37,6 +37,7 @@ def test_navigate_request_is_frozen() -> None:
 def test_kiosk_status_fields() -> None:
     status = KioskStatus(
         uuid="abc",
+        engine_type="chromium",
         current_url="https://example.com",
         is_running=True,
         error=None,
@@ -46,13 +47,13 @@ def test_kiosk_status_fields() -> None:
 
 
 def test_kiosk_status_is_frozen() -> None:
-    status = KioskStatus(uuid="x", current_url="https://a.com", is_running=False, error=None)
+    status = KioskStatus(uuid="x", engine_type="chromium", current_url="https://a.com", is_running=False, error=None)
     with pytest.raises(ValidationError):
         status.uuid = "y"  # type: ignore[misc]
 
 
 def test_kiosk_summary_fields() -> None:
-    s = KioskSummary(uuid="u1", is_running=True, current_url="https://ex.com")
+    s = KioskSummary(uuid="u1", engine_type="chromium", is_running=True, current_url="https://ex.com")
     assert s.uuid == "u1"
     assert s.is_running is True
 

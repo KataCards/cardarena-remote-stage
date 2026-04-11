@@ -45,13 +45,13 @@ def test_list_returns_all() -> None:
     k1, k2 = _FakeKiosk(), _FakeKiosk()
     registry.register("a", k1)
     registry.register("b", k2)
-    assert registry.list() == {"a": k1, "b": k2}
+    assert registry.list_all() == {"a": k1, "b": k2}
 
 
 def test_list_is_shallow_copy() -> None:
     registry = KioskRegistry()
     registry.register("a", _FakeKiosk())
-    listing = registry.list()
+    listing = registry.list_all()
     listing["injected"] = _FakeKiosk()
     assert registry.get("injected") is None
 

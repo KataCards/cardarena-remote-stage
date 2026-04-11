@@ -123,3 +123,101 @@ async def test_runtime_error_propagates(tmp_html) -> None:
     controls = PlaywrightControls(engine=engine)
     with pytest.raises(RuntimeError, match="not running"):
         await controls.navigate(f"file://{tmp_html}")
+
+
+# ---------------------------------------------------------------------------
+# Headless integration tests — real Chromium, no display required
+# ---------------------------------------------------------------------------
+
+@pytest.mark.headless
+class TestPlaywrightControlsHeadless:
+    """Integration tests: each control method exercised against real headless Chromium."""
+
+    async def test_navigate_changes_url(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        url = f"{local_http_server}/index.html"
+        result = await headless_controls.navigate(url)
+        assert result is True
+        current = await headless_controls.engine.get_current_url()
+        assert current == url
+
+    async def test_reload_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        assert await headless_controls.reload() is True
+
+    async def test_go_back_after_two_navigations(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        url1 = f"{local_http_server}/index.html"
+        url2 = f"{local_http_server}/page2.html"
+        await headless_controls.navigate(url1)
+        await headless_controls.navigate(url2)
+        result = await headless_controls.go_back()
+        assert result is True
+        assert await headless_controls.engine.get_current_url() == url1
+
+    async def test_go_forward_after_go_back(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        url1 = f"{local_http_server}/index.html"
+        url2 = f"{local_http_server}/page2.html"
+        await headless_controls.navigate(url1)
+        await headless_controls.navigate(url2)
+        await headless_controls.go_back()
+        result = await headless_controls.go_forward()
+        assert result is True
+        assert await headless_controls.engine.get_current_url() == url2
+
+    async def test_scroll_down_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        assert await headless_controls.scroll("down", 200) is True
+
+    async def test_scroll_up_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        await headless_controls.scroll("down", 200)
+        assert await headless_controls.scroll("up", 200) is True
+
+    async def test_scroll_left_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        assert await headless_controls.scroll("left", 100) is True
+
+    async def test_scroll_right_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        assert await headless_controls.scroll("right", 100) is True
+
+    async def test_click_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        assert await headless_controls.click(100, 100) is True
+
+    async def test_type_text_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        page = headless_controls.engine.get_page()
+        await page.click("#inp")
+        assert await headless_controls.type_text("hello") is True
+
+    async def test_press_key_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        assert await headless_controls.press_key("Tab") is True
+
+    async def test_wait_for_navigation_returns_true(
+        self, headless_controls: PlaywrightControls, local_http_server: str
+    ) -> None:
+        await headless_controls.navigate(f"{local_http_server}/index.html")
+        assert await headless_controls.wait_for_navigation() is True
