@@ -5,7 +5,11 @@ from fastapi.security.base import SecurityBase
 
 from ...base.principal import Principal, Scope
 from ...base.provider import SecurityProvider
+from src.utils import get_logger
 from .scheme import NoCredentialsScheme
+
+
+logger = get_logger(__name__)
 
 
 class IpWhitelistProvider(SecurityProvider):
@@ -32,6 +36,11 @@ class IpWhitelistProvider(SecurityProvider):
     async def verify(self, credentials: object | None, request: Request) -> Principal:
         """Verify client IP against the configured whitelist."""
         if request.client is None:
+            logger.warning(
+                "auth_failed",
+                auth_method="ip",
+                reason="no_client",
+            )
             raise HTTPException(
                 status_code=401,
                 detail="Unable to determine client IP address"
@@ -40,6 +49,12 @@ class IpWhitelistProvider(SecurityProvider):
         host = request.client.host
 
         if host not in self.allowed_ips:
+            logger.warning(
+                "auth_failed",
+                auth_method="ip",
+                reason="ip_not_whitelisted",
+                ip=host,
+            )
             raise HTTPException(
                 status_code=403,
                 detail="IP address not authorized"

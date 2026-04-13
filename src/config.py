@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import ConfigDict, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode
@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     kiosk_headless: bool = False
     kiosk_fullscreen: bool = False
     kiosk_error_routing: bool = True
+    log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
+    log_format: Literal["json", "console"] = "json"
 
     @field_validator("kiosk_allowed_urls", mode="before")
     @classmethod

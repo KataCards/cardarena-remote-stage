@@ -13,6 +13,10 @@ from src.config import get_settings
 from src.kiosk.kiosk.factory.playwright import PlaywrightKioskFactory
 from src.security.config import get_settings as get_security_settings
 from src.startup import KioskStartupService
+from src.utils import configure_logging, get_logger
+
+
+logger = get_logger(__name__)
 
 registry = KioskRegistry()
 scheduler = KioskScheduler(registry)
@@ -47,7 +51,14 @@ app.include_router(build_schedule_router(registry, scheduler))
 
 def main() -> None:
     settings = get_settings()
-    uvicorn.run("src.main:app", host=settings.host, port=settings.port, reload=False)
+    configure_logging(settings.log_level, settings.log_format)
+    uvicorn.run(
+        "src.main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=False,
+        log_config=None,
+    )
 
 
 if __name__ == "__main__":
