@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
 from typing import TYPE_CHECKING
 
 from .models import AdBreak, ScheduleRequest
@@ -24,7 +25,9 @@ class KioskScheduler:
         """Start (or replace) a continuous schedule loop for the given kiosk."""
         self.cancel(uuid)
         logger.info("schedule_started", kiosk_uuid=uuid, entry_count=len(request.entries))
-        self._tasks[uuid] = asyncio.create_task(self._loop_schedule(uuid, request))
+        # Copy context and clear request-scoped vars to prevent request_id leaking into background task
+        ctx = contextvars.copy_context()
+        self._tasks[uuid] = asyncio.create_task(ctx.run(self._loop_schedule, uuid, request))
 
     async def _loop_schedule(self, uuid: str, request: ScheduleRequest) -> None:
         kiosk = self._registry.get(uuid)

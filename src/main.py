@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from time import perf_counter
 from uuid import uuid4
 
@@ -9,7 +8,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 import uvicorn
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from starlette.responses import Response
+from starlette.types import ASGIApp, Receive, Scope, Send
 from structlog.contextvars import bind_contextvars, unbind_contextvars
 
 from src.api.registry import KioskRegistry
@@ -57,6 +56,46 @@ _startup = KioskStartupService(registry, PlaywrightKioskFactory())
 app = FastAPI(lifespan=_startup.build_lifespan())
 
 
+# --- Pure ASGI middleware for request context and logging
+class RequestContextMiddleware:
+    """Binds request_id to contextvars before exception handlers run, captures real status codes, and logs requests."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Bind request_id before calling app — includes exception handlers
+        request_id = str(uuid4())
+        bind_contextvars(request_id=request_id)
+        started = perf_counter()
+        status_code = 500
+        method = scope.get("method", "")
+        path = scope.get("path", "")
+
+        async def send_with_status(message: dict) -> None:
+            nonlocal status_code
+            if message["type"] == "http.response.start":
+                status_code = message["status"]
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_with_status)
+        finally:
+            duration_ms = round((perf_counter() - started) * 1000, 2)
+            logger.info(
+                "request",
+                method=method,
+                path=path,
+                status_code=status_code,
+                duration_ms=duration_ms,
+            )
+            unbind_contextvars("request_id")
+
+
 @app.exception_handler(StarletteHTTPException)
 async def _http_exception_handler(
     request: Request,
@@ -81,27 +120,8 @@ async def _unhandled_exception_handler(
     return await unhandled_exception_handler(request, exc)
 
 
-@app.middleware("http")
-async def _request_logging_middleware(
-    request: Request,
-    call_next: Callable[[Request], Awaitable[Response]],
-) -> Response:
-    bind_contextvars(request_id=str(uuid4()))
-    started = perf_counter()
-    response: Response | None = None
-    try:
-        response = await call_next(request)
-        return response
-    finally:
-        duration_ms = round((perf_counter() - started) * 1000, 2)
-        logger.info(
-            "request",
-            method=request.method,
-            path=request.url.path,
-            status_code=response.status_code if response is not None else 500,
-            duration_ms=duration_ms,
-        )
-        unbind_contextvars("request_id")
+# Register pure ASGI middleware to wrap entire stack including exception handlers
+app.add_middleware(RequestContextMiddleware)
 
 
 if _security_router is not None:
