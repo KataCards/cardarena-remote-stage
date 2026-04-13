@@ -63,3 +63,69 @@ def test_deregister_leaves_others() -> None:
     registry.register("b", k2)
     registry.deregister("a")
     assert registry.get("b") is k2
+
+
+# --- Activity log lifecycle tests
+def test_register_creates_activity_log() -> None:
+    """Registering a kiosk creates an associated activity log."""
+    registry = KioskRegistry()
+    registry.register("uuid-1", _FakeKiosk())
+    log = registry.get_log("uuid-1")
+    assert log is not None
+
+
+def test_get_log_returns_none_for_nonexistent() -> None:
+    """get_log returns None for UUIDs that were never registered."""
+    registry = KioskRegistry()
+    assert registry.get_log("nonexistent") is None
+
+
+def test_activity_log_records_events() -> None:
+    """Activity log can record and retrieve events."""
+    registry = KioskRegistry()
+    registry.register("uuid-1", _FakeKiosk())
+    log = registry.get_log("uuid-1")
+    assert log is not None
+    
+    log.record("test_event", success=True, detail="test")
+    events = log.list_all()
+    
+    assert len(events) == 1
+    assert events[0].event == "test_event"
+    assert events[0].success is True
+    assert events[0].context["detail"] == "test"
+
+
+def test_deregister_removes_activity_log() -> None:
+    """Deregistering a kiosk removes its activity log."""
+    registry = KioskRegistry()
+    registry.register("uuid-1", _FakeKiosk())
+    
+    # Verify log exists
+    assert registry.get_log("uuid-1") is not None
+    
+    # Deregister and verify log is removed
+    registry.deregister("uuid-1")
+    assert registry.get_log("uuid-1") is None
+
+
+def test_deregister_removes_only_target_log() -> None:
+    """Deregistering one kiosk doesn't affect other kiosks' logs."""
+    registry = KioskRegistry()
+    registry.register("a", _FakeKiosk())
+    registry.register("b", _FakeKiosk())
+    
+    log_a = registry.get_log("a")
+    log_b = registry.get_log("b")
+    assert log_a is not None
+    assert log_b is not None
+    
+    # Record events in both logs
+    log_a.record("event_a")
+    log_b.record("event_b")
+    
+    # Deregister 'a' and verify 'b' log is intact
+    registry.deregister("a")
+    assert registry.get_log("a") is None
+    assert registry.get_log("b") is log_b
+    assert len(log_b.list_all()) == 1

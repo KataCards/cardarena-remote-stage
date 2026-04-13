@@ -52,7 +52,7 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
         get_kiosk_or_404(registry, uuid)
         log = registry.get_log(uuid)
         try:
-            scheduler.cancel(uuid)
+            was_cancelled = scheduler.cancel(uuid)
         except (RuntimeError, ValueError):
             if log:
                 log.record("schedule_cancelled", success=False)
@@ -63,7 +63,8 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
                 context={"kiosk_uuid": uuid},
             )
         if log:
-            log.record("schedule_cancelled")
+            # Record actual result: success=True only if a schedule was actually cancelled
+            log.record("schedule_cancelled", success=was_cancelled, was_running=was_cancelled)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/ad-break", status_code=204, summary="Run ad break")
@@ -74,12 +75,17 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
     ) -> Response:
         get_kiosk_or_404(registry, uuid)
         log = registry.get_log(uuid)
+        
+        # Record start event in activity log
+        if log:
+            log.record("ad_break_started", url=body.url, duration_seconds=body.duration_seconds)
+        
         try:
             await scheduler.run_ad_break(uuid, body)
         except (RuntimeError, ValueError):
             if log:
                 log.record(
-                    "ad_break_started",
+                    "ad_break_failed",
                     success=False,
                     url=body.url,
                     duration_seconds=body.duration_seconds,
@@ -90,8 +96,11 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        
+        # Record end event in activity log
         if log:
-            log.record("ad_break_started", url=body.url, duration_seconds=body.duration_seconds)
+            log.record("ad_break_ended", url=body.url, duration_seconds=body.duration_seconds)
+        
         return Response(status_code=204)
 
     return router
