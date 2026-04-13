@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 from src.api.registry import KioskRegistry
 from src.api.routes.kiosks import build_router
@@ -80,3 +80,71 @@ def test_get_kiosk_not_found():
     registry = KioskRegistry()
     response = TestClient(_make_app(registry, [Scope.READ])).get("/kiosks/nonexistent")
     assert response.status_code == 404
+
+
+# --- History endpoint tests
+def test_get_history_requires_admin_scope(registry_with_kiosk):
+    """GET /kiosks/{uuid}/history requires ADMIN scope."""
+    registry, uuid, _ = registry_with_kiosk
+
+    # READ scope → 403
+    response = TestClient(_make_app(registry, [Scope.READ])).get(f"/kiosks/{uuid}/history")
+    assert response.status_code == 403
+
+    # CONTROL scope → 403
+    response = TestClient(_make_app(registry, [Scope.CONTROL])).get(f"/kiosks/{uuid}/history")
+    assert response.status_code == 403
+
+    # No credentials → 401
+    app = FastAPI()
+    app.include_router(build_router(registry))
+
+    async def _no_auth():
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    app.dependency_overrides[get_principal] = _no_auth
+    response = TestClient(app, raise_server_exceptions=False).get(f"/kiosks/{uuid}/history")
+    assert response.status_code == 401
+
+    # ADMIN scope → 200
+    response = TestClient(_make_app(registry, [Scope.ADMIN])).get(f"/kiosks/{uuid}/history")
+    assert response.status_code == 200
+
+
+def test_get_history_not_found():
+    """GET /kiosks/{uuid}/history returns 404 for unknown UUID."""
+    registry = KioskRegistry()
+    response = TestClient(_make_app(registry, [Scope.ADMIN])).get("/kiosks/nonexistent/history")
+    assert response.status_code == 404
+    data = response.json()
+    assert data["detail"]["code"] == "not_found"
+
+
+def test_get_history_newest_first(registry_with_kiosk):
+    """GET /kiosks/{uuid}/history returns events newest first."""
+    registry, uuid, _ = registry_with_kiosk
+    log = registry.get_log(uuid)
+
+    # Record three events in chronological order
+    log.record("event_1", success=True, detail="first")
+    log.record("event_2", success=False, detail="second")
+    log.record("event_3", success=True, detail="third")
+
+    # Fetch history
+    response = TestClient(_make_app(registry, [Scope.ADMIN])).get(f"/kiosks/{uuid}/history")
+    assert response.status_code == 200
+    data = response.json()
+
+    # Assert newest first (event_3, event_2, event_1)
+    assert len(data) == 3
+    assert data[0]["event"] == "event_3"
+    assert data[0]["success"] is True
+    assert data[0]["context"]["detail"] == "third"
+
+    assert data[1]["event"] == "event_2"
+    assert data[1]["success"] is False
+    assert data[1]["context"]["detail"] == "second"
+
+    assert data[2]["event"] == "event_1"
+    assert data[2]["success"] is True
+    assert data[2]["context"]["detail"] == "first"

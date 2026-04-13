@@ -61,7 +61,8 @@ def test_build_no_resources_when_no_error_config() -> None:
     assert kiosk.engine.error_map == {}
 
 
-def test_build_fullscreen_does_not_inject_default_launch_args() -> None:
+def test_build_fullscreen_does_not_inject_default_launch_args(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KIOSK_PLAYWRIGHT_LAUNCH_ARGS", "")
     kiosk = PlaywrightKioskFactory().build(Settings(kiosk_fullscreen=True))
     assert kiosk.engine.launch_args == []
 

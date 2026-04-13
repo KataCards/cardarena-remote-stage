@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, Request
 
 from .base.principal import Principal, Scope
 from .config import get_active_provider
+from src.utils import ErrorCode, raise_http
 
 _provider = get_active_provider()
 
@@ -38,7 +39,7 @@ def require_scope(scope: Scope) -> Callable[..., Awaitable[Principal]]:
         try:
             principal.require_scope(scope)
         except ValueError:
-            raise HTTPException(status_code=403, detail="Insufficient permissions")
+            raise_http(403, ErrorCode.forbidden, "Insufficient permissions")
         return principal
 
     # Give the inner function a unique name for distinct dependency nodes.

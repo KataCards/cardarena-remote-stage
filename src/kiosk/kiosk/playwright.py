@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from pathlib import Path
 from typing import Any
 
@@ -10,9 +9,10 @@ from pydantic import Field
 from .base import Kiosk
 from ..controls.playwright import PlaywrightControls
 from ..engine.playwright import PlaywrightEngine
+from src.utils import get_logger
 
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 class PlaywrightKiosk(Kiosk):
@@ -56,13 +56,25 @@ class PlaywrightKiosk(Kiosk):
         await self._navigate_with_retry(self.default_page)
         await self._sync_current_url()
         self.is_running = True
+        logger.info(
+            "kiosk_started",
+            kiosk_uuid=str(self.kiosk_id),
+            kiosk_name=self.kiosk_name,
+        )
 
     async def stop(self) -> None:
         """Stop the kiosk."""
         self.is_running = False
         self.current_url = ""
         self.controls = None
-        await self.engine.close()
+        try:
+            await self.engine.close()
+        finally:
+            logger.info(
+                "kiosk_stopped",
+                kiosk_uuid=str(self.kiosk_id),
+                kiosk_name=self.kiosk_name,
+            )
 
     # -------------------------------------------------------------------------
     # Error Handling
@@ -82,9 +94,9 @@ class PlaywrightKiosk(Kiosk):
             await self.controls.navigate(file_url)
         except Exception:
             logger.exception(
-                "Failed to navigate to error page for code %s at %s",
-                error_code,
-                file_url,
+                "error_page_navigation_failed",
+                error_code=error_code,
+                file_url=file_url,
             )
 
     # -------------------------------------------------------------------------
@@ -111,5 +123,9 @@ class PlaywrightKiosk(Kiosk):
 
     async def go_home(self) -> bool:
         """Navigate to the default page."""
-        await self._navigate_with_retry(self.default_page)
+        try:
+            await self._navigate_with_retry(self.default_page)
+        except RuntimeError:
+            logger.error("operation_failed", operation="go_home")
+            return False
         return True

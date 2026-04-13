@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import shlex
-from functools import lru_cache
 from typing import Annotated, Literal
 
 from pydantic import ConfigDict, Field, field_validator
@@ -24,7 +23,6 @@ class PlaywrightFactorySettings(BaseSettings):
         return list(v)  # type: ignore[arg-type]
 
 
-@lru_cache
 def get_playwright_factory_settings() -> PlaywrightFactorySettings:
-    """Get cached Playwright-factory settings instance."""
+    """Return a fresh PlaywrightFactorySettings instance read from the environment."""
     return PlaywrightFactorySettings()
