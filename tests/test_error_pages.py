@@ -14,4 +14,4 @@ def test_build_error_map_warns_when_folder_missing(
 
     assert resources == {}
     assert error_map == {}
-    assert "Error pages directory is missing or not a directory" in captured.out
+    assert "error_pages_dir_missing" in captured.out

@@ -19,8 +19,7 @@ def build_router(repo: ApiKeyRepository) -> APIRouter:
         responses=error_responses(401, 403, 404, 409, 422),
     )
 
-
-    @router.post("", response_model=ApiKeyCreated, status_code=201)
+    @router.post("", response_model=ApiKeyCreated, status_code=201, summary="Create API key")
     async def create_key(
         entry: ApiKeyCreate,
         _=Depends(require_scope(Scope.ADMIN)),
@@ -35,16 +34,14 @@ def build_router(repo: ApiKeyRepository) -> APIRouter:
                 f"API key '{entry.name}' already exists",
             )
 
-
-    @router.get("", response_model=list[ApiKeyRecord])
+    @router.get("", response_model=list[ApiKeyRecord], summary="List API keys")
     async def list_keys(
         _=Depends(require_scope(Scope.ADMIN)),
     ) -> list[ApiKeyRecord]:
         """List all API keys."""
         return repo.list_all()
 
-
-    @router.delete("/{name}", status_code=204)
+    @router.delete("/{name}", status_code=204, summary="Revoke API key")
     async def revoke_key(
         name: str,
         _=Depends(require_scope(Scope.ADMIN)),
@@ -53,8 +50,7 @@ def build_router(repo: ApiKeyRepository) -> APIRouter:
         if not repo.revoke(name):
             raise_http(404, ErrorCode.not_found, f"API key '{name}' not found")
 
-
-    @router.delete("/{name}/hard", status_code=204)
+    @router.delete("/{name}/hard", status_code=204, summary="Delete API key")
     async def delete_key(
         name: str,
         _=Depends(require_scope(Scope.ADMIN)),

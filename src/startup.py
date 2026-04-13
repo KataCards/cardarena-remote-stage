@@ -10,6 +10,11 @@ from src.api.registry import KioskRegistry
 from src.config import get_settings
 from src.kiosk.kiosk.factory.base import KioskFactory
 from src.security.config import get_settings as get_security_settings
+from src.startup_validation import (
+    check_app_config,
+    check_registry_populated,
+    check_security_config,
+)
 from src.utils import configure_logging, get_logger
 
 
@@ -33,11 +38,14 @@ class KioskStartupService:
             security_settings = get_security_settings()
             started_kiosks = []
             try:
+                check_app_config(settings)
+                check_security_config(security_settings)
                 kiosk = self._factory.build(settings)
                 self._registry.register(str(uuid4()), kiosk)
                 for current_kiosk in self._registry.list_all().values():
                     await current_kiosk.start()
                     started_kiosks.append(current_kiosk)
+                check_registry_populated(self._registry)
                 logger.info(
                     "startup_complete",
                     kiosk_count=len(started_kiosks),

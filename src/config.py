@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     kiosk_headless: bool = False
     kiosk_fullscreen: bool = False
     kiosk_error_routing: bool = True
+    kiosk_history_size: int = Field(default=100, gt=0)
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     log_format: Literal["json", "console"] = "json"
 

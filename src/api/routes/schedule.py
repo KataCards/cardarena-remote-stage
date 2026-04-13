@@ -20,58 +20,78 @@ def build_router(registry: "KioskRegistry", scheduler: "KioskScheduler") -> APIR
     """Build schedule-management routes."""
     router = APIRouter(responses=error_responses(401, 403, 404, 422, 500))
 
-    @router.post("/kiosks/{uuid}/schedule", status_code=204)
+    @router.post("/kiosks/{uuid}/schedule", status_code=204, summary="Start content schedule")
     async def start_schedule(
         uuid: str,
         body: ScheduleRequest,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         get_kiosk_or_404(registry, uuid)
+        log = registry.get_log(uuid)
         # run_schedule is intentionally sync; it only creates the background task.
         try:
             scheduler.run_schedule(uuid, body)
         except (RuntimeError, ValueError):
+            if log:
+                log.record("schedule_started", success=False, entry_count=len(body.entries))
             raise_http(
                 500,
                 ErrorCode.operation_failed,
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        if log:
+            log.record("schedule_started", entry_count=len(body.entries))
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/schedule/cancel", status_code=204)
+    @router.post("/kiosks/{uuid}/schedule/cancel", status_code=204, summary="Cancel content schedule")
     async def cancel_schedule(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         get_kiosk_or_404(registry, uuid)
+        log = registry.get_log(uuid)
         try:
             scheduler.cancel(uuid)
         except (RuntimeError, ValueError):
+            if log:
+                log.record("schedule_cancelled", success=False)
             raise_http(
                 500,
                 ErrorCode.operation_failed,
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        if log:
+            log.record("schedule_cancelled")
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/ad-break", status_code=204)
+    @router.post("/kiosks/{uuid}/ad-break", status_code=204, summary="Run ad break")
     async def ad_break(
         uuid: str,
         body: AdBreak,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         get_kiosk_or_404(registry, uuid)
+        log = registry.get_log(uuid)
         try:
             await scheduler.run_ad_break(uuid, body)
         except (RuntimeError, ValueError):
+            if log:
+                log.record(
+                    "ad_break_started",
+                    success=False,
+                    url=body.url,
+                    duration_seconds=body.duration_seconds,
+                )
             raise_http(
                 500,
                 ErrorCode.operation_failed,
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        if log:
+            log.record("ad_break_started", url=body.url, duration_seconds=body.duration_seconds)
         return Response(status_code=204)
 
     return router

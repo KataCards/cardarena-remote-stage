@@ -20,7 +20,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     @router.get(
         "/health",
         response_model=dict[str, int | str],
-        summary="Get API health status",
+        summary="API health check",
         responses={
             200: {
                 "description": "API is reachable and returns current kiosk count.",

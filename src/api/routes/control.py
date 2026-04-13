@@ -35,7 +35,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
                 context={"kiosk_uuid": uuid},
             )
 
-    @router.post("/kiosks/{uuid}/navigate", status_code=204)
+    @router.post("/kiosks/{uuid}/navigate", status_code=204, summary="Navigate to URL")
     async def navigate(
         uuid: str,
         body: NavigateRequest,
@@ -43,109 +43,137 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.navigate(body.url)
+        if log := registry.get_log(uuid):
+            log.record("navigate", success=success, url=body.url)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/reload", status_code=204)
+    @router.post("/kiosks/{uuid}/reload", status_code=204, summary="Reload current page")
     async def reload(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.reload()
+        if log := registry.get_log(uuid):
+            log.record("reload", success=success)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/start", status_code=204)
+    @router.post("/kiosks/{uuid}/start", status_code=204, summary="Start kiosk")
     async def start(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
+        log = registry.get_log(uuid)
         try:
             await kiosk.start()
         except RuntimeError:
+            if log:
+                log.record("start", success=False)
             raise_http(
                 500,
                 ErrorCode.operation_failed,
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        if log:
+            log.record("start")
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/stop", status_code=204)
+    @router.post("/kiosks/{uuid}/stop", status_code=204, summary="Stop kiosk")
     async def stop(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
+        log = registry.get_log(uuid)
         try:
             await kiosk.stop()
         except RuntimeError:
+            if log:
+                log.record("stop", success=False)
             raise_http(
                 500,
                 ErrorCode.operation_failed,
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        if log:
+            log.record("stop")
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/restart", status_code=204)
+    @router.post("/kiosks/{uuid}/restart", status_code=204, summary="Restart kiosk")
     async def restart(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
+        log = registry.get_log(uuid)
         try:
             await kiosk.restart()
         except RuntimeError:
+            if log:
+                log.record("restart", success=False)
             raise_http(
                 500,
                 ErrorCode.operation_failed,
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        if log:
+            log.record("restart")
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/go-back", status_code=204)
+    @router.post("/kiosks/{uuid}/go-back", status_code=204, summary="Navigate back")
     async def go_back(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.go_back()
+        if log := registry.get_log(uuid):
+            log.record("go_back", success=success)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/go-forward", status_code=204)
+    @router.post("/kiosks/{uuid}/go-forward", status_code=204, summary="Navigate forward")
     async def go_forward(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.go_forward()
+        if log := registry.get_log(uuid):
+            log.record("go_forward", success=success)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/go-home", status_code=204)
+    @router.post("/kiosks/{uuid}/go-home", status_code=204, summary="Navigate to default page")
     async def go_home(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
+        log = registry.get_log(uuid)
         try:
             success = await kiosk.go_home()
         except RuntimeError:
+            if log:
+                log.record("go_home", success=False)
             raise_http(
                 500,
                 ErrorCode.operation_failed,
                 "Kiosk operation failed",
                 context={"kiosk_uuid": uuid},
             )
+        if log:
+            log.record("go_home", success=success)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/click", status_code=204)
+    @router.post("/kiosks/{uuid}/click", status_code=204, summary="Click at coordinates")
     async def click(
         uuid: str,
         body: ClickRequest,
@@ -153,10 +181,12 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.click(body.x, body.y)
+        if log := registry.get_log(uuid):
+            log.record("click", success=success, x=body.x, y=body.y)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/type-text", status_code=204)
+    @router.post("/kiosks/{uuid}/type-text", status_code=204, summary="Type text")
     async def type_text(
         uuid: str,
         body: TypeTextRequest,
@@ -164,10 +194,12 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.type_text(body.text)
+        if log := registry.get_log(uuid):
+            log.record("type_text", success=success)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/scroll", status_code=204)
+    @router.post("/kiosks/{uuid}/scroll", status_code=204, summary="Scroll page")
     async def scroll(
         uuid: str,
         body: ScrollRequest,
@@ -175,10 +207,12 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.scroll(body.direction, body.amount)
+        if log := registry.get_log(uuid):
+            log.record("scroll", success=success, direction=body.direction, amount=body.amount)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/press-key", status_code=204)
+    @router.post("/kiosks/{uuid}/press-key", status_code=204, summary="Press keyboard key")
     async def press_key(
         uuid: str,
         body: PressKeyRequest,
@@ -186,12 +220,15 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.press_key(body.key)
+        if log := registry.get_log(uuid):
+            log.record("press_key", success=success, key=body.key)
         _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post(
         "/kiosks/{uuid}/screenshot",
         response_class=StreamingResponse,
+        summary="Capture screenshot",
         responses={
             200: {
                 "description": "PNG screenshot binary stream.",
@@ -222,5 +259,18 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
             media_type="image/png",
             headers={"Content-Disposition": 'attachment; filename="screenshot.png"'},
         )
+
+    @router.get(
+        "/kiosks/{uuid}/health",
+        response_model=dict[str, bool | str],
+        summary="Get kiosk health",
+    )
+    async def kiosk_health(
+        uuid: str,
+        _=Depends(require_scope(Scope.CONTROL)),
+    ) -> dict[str, bool | str]:
+        kiosk = get_kiosk_or_404(registry, uuid)
+        healthy = await kiosk.is_healthy()
+        return {"uuid": uuid, "healthy": healthy}
 
     return router
