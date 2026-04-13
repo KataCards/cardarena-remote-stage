@@ -3,7 +3,7 @@ from __future__ import annotations
 import io
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import Response, StreamingResponse
 
 from ..models import (
@@ -13,8 +13,10 @@ from ..models import (
     ScrollRequest,
     TypeTextRequest,
 )
+from .openapi import error_responses
 from .utils import get_kiosk_or_404
 from ...security import Scope, require_scope
+from src.utils import ErrorCode, raise_http
 
 if TYPE_CHECKING:
     from ..registry import KioskRegistry
@@ -22,11 +24,16 @@ if TYPE_CHECKING:
 
 def build_router(registry: "KioskRegistry") -> APIRouter:
     """Build kiosk control routes."""
-    router = APIRouter()
+    router = APIRouter(responses=error_responses(401, 403, 404, 422, 500))
 
-    def _assert_success(success: bool) -> None:
+    def _assert_success(success: bool, uuid: str) -> None:
         if not success:
-            raise HTTPException(status_code=500, detail="Kiosk operation failed")
+            raise_http(
+                500,
+                ErrorCode.operation_failed,
+                "Kiosk operation failed",
+                context={"kiosk_uuid": uuid},
+            )
 
     @router.post("/kiosks/{uuid}/navigate", status_code=204)
     async def navigate(
@@ -36,7 +43,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.navigate(body.url)
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/reload", status_code=204)
@@ -46,7 +53,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.reload()
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/start", status_code=204)
@@ -58,7 +65,12 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
         try:
             await kiosk.start()
         except RuntimeError:
-            raise HTTPException(status_code=500, detail="Kiosk operation failed")
+            raise_http(
+                500,
+                ErrorCode.operation_failed,
+                "Kiosk operation failed",
+                context={"kiosk_uuid": uuid},
+            )
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/stop", status_code=204)
@@ -70,7 +82,12 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
         try:
             await kiosk.stop()
         except RuntimeError:
-            raise HTTPException(status_code=500, detail="Kiosk operation failed")
+            raise_http(
+                500,
+                ErrorCode.operation_failed,
+                "Kiosk operation failed",
+                context={"kiosk_uuid": uuid},
+            )
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/restart", status_code=204)
@@ -82,7 +99,12 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
         try:
             await kiosk.restart()
         except RuntimeError:
-            raise HTTPException(status_code=500, detail="Kiosk operation failed")
+            raise_http(
+                500,
+                ErrorCode.operation_failed,
+                "Kiosk operation failed",
+                context={"kiosk_uuid": uuid},
+            )
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/go-back", status_code=204)
@@ -92,7 +114,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.go_back()
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/go-forward", status_code=204)
@@ -102,7 +124,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.go_forward()
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/go-home", status_code=204)
@@ -114,8 +136,13 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
         try:
             success = await kiosk.go_home()
         except RuntimeError:
-            raise HTTPException(status_code=500, detail="Kiosk operation failed")
-        _assert_success(success)
+            raise_http(
+                500,
+                ErrorCode.operation_failed,
+                "Kiosk operation failed",
+                context={"kiosk_uuid": uuid},
+            )
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/click", status_code=204)
@@ -126,7 +153,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.click(body.x, body.y)
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/type-text", status_code=204)
@@ -137,7 +164,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.type_text(body.text)
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/scroll", status_code=204)
@@ -148,7 +175,7 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.scroll(body.direction, body.amount)
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
     @router.post("/kiosks/{uuid}/press-key", status_code=204)
@@ -159,10 +186,23 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
     ) -> Response:
         kiosk = get_kiosk_or_404(registry, uuid)
         success = await kiosk.press_key(body.key)
-        _assert_success(success)
+        _assert_success(success, uuid)
         return Response(status_code=204)
 
-    @router.post("/kiosks/{uuid}/screenshot", response_class=StreamingResponse)
+    @router.post(
+        "/kiosks/{uuid}/screenshot",
+        response_class=StreamingResponse,
+        responses={
+            200: {
+                "description": "PNG screenshot binary stream.",
+                "content": {
+                    "image/png": {
+                        "schema": {"type": "string", "format": "binary"}
+                    }
+                },
+            }
+        },
+    )
     async def screenshot(
         uuid: str,
         _=Depends(require_scope(Scope.CONTROL)),
@@ -171,7 +211,12 @@ def build_router(registry: "KioskRegistry") -> APIRouter:
         try:
             data = await kiosk.screenshot()
         except RuntimeError:
-            raise HTTPException(status_code=500, detail="Kiosk operation failed")
+            raise_http(
+                500,
+                ErrorCode.operation_failed,
+                "Kiosk operation failed",
+                context={"kiosk_uuid": uuid},
+            )
         return StreamingResponse(
             io.BytesIO(data),
             media_type="image/png",

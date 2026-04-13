@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_error_map(folder: str) -> tuple[dict[str, str], dict[int, str]]:
-    """Build PlaywrightEngine resources and error_map from a folder."""
+    """Build Playwright engine resources and HTTP status-to-resource mapping."""
     root = Path(folder)
     if not root.exists() or not root.is_dir():
         logger.warning(

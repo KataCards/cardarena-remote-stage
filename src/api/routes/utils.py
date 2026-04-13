@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fastapi import HTTPException
-
 from src.kiosk.kiosk.base import Kiosk
+from src.utils import ErrorCode, raise_http
 
 if TYPE_CHECKING:
     from ..registry import KioskRegistry
@@ -13,5 +12,10 @@ if TYPE_CHECKING:
 def get_kiosk_or_404(registry: "KioskRegistry", uuid: str) -> Kiosk:
     kiosk = registry.get(uuid)
     if kiosk is None:
-        raise HTTPException(status_code=404, detail=f"Kiosk not found: {uuid}")
+        raise_http(
+            404,
+            ErrorCode.not_found,
+            f"Kiosk not found: {uuid}",
+            context={"kiosk_uuid": uuid},
+        )
     return kiosk

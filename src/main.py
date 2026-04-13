@@ -1,7 +1,14 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, FastAPI
+from time import perf_counter
+from uuid import uuid4
+
+from fastapi import APIRouter, FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 import uvicorn
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.responses import Response
+from structlog.contextvars import bind_contextvars, clear_contextvars
 
 from src.api.registry import KioskRegistry
 from src.api.routes.control import build_router as build_control_router
@@ -14,6 +21,11 @@ from src.kiosk.kiosk.factory.playwright import PlaywrightKioskFactory
 from src.security.config import get_settings as get_security_settings
 from src.startup import KioskStartupService
 from src.utils import configure_logging, get_logger
+from src.utils.exceptions.handlers import (
+    http_exception_handler,
+    unhandled_exception_handler,
+    validation_exception_handler,
+)
 
 
 logger = get_logger(__name__)
@@ -41,6 +53,52 @@ if _sec.security_provider == "api_key":
 _startup = KioskStartupService(registry, PlaywrightKioskFactory())
 
 app = FastAPI(lifespan=_startup.build_lifespan())
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _http_exception_handler(
+    request: Request,
+    exc: StarletteHTTPException,
+):
+    return await http_exception_handler(request, exc)
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
+    return await validation_exception_handler(request, exc)
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(
+    request: Request,
+    exc: Exception,
+):
+    return await unhandled_exception_handler(request, exc)
+
+
+@app.middleware("http")
+async def _request_logging_middleware(request: Request, call_next) -> Response:
+    bind_contextvars(request_id=str(uuid4()))
+    started = perf_counter()
+    response: Response | None = None
+    try:
+        response = await call_next(request)
+        return response
+    finally:
+        duration_ms = round((perf_counter() - started) * 1000, 2)
+        logger.info(
+            "request",
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code if response is not None else 500,
+            duration_ms=duration_ms,
+        )
+        clear_contextvars()
+
+
 if _security_router is not None:
     app.include_router(_security_router)
 app.include_router(build_health_router(registry))

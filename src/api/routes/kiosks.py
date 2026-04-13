@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 
 from ..models import KioskStatus, KioskSummary
+from .openapi import error_responses
 from .utils import get_kiosk_or_404
 from ...security import Scope, require_scope
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
 
 def build_router(registry: "KioskRegistry") -> APIRouter:
     """Build read-only kiosk routes."""
-    router = APIRouter()
+    router = APIRouter(responses=error_responses(401, 403, 404, 422))
 
     @router.get("/kiosks", response_model=list[KioskSummary])
     async def list_kiosks(_=Depends(require_scope(Scope.READ))) -> list[KioskSummary]:

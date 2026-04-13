@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from src.utils.error_pages import build_error_map
+from src.utils.exceptions.error_page_map import build_error_map
 
 
 def test_build_error_map_warns_when_folder_missing(

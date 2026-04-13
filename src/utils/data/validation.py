@@ -11,9 +11,10 @@ _URL_PATTERN = re.compile(
 )
 
 
-def validate_url(v: str) -> str:
-    if not _URL_PATTERN.match(v):
+def validate_url(value: str) -> str:
+    """Validate supported URL schemes for kiosk navigation fields."""
+    if not _URL_PATTERN.match(value):
         raise ValueError(
-            f"URL must start with 'https://', 'http://', or 'file:///'. Got: {v}"
+            f"URL must start with 'https://', 'http://', or 'file:///'. Got: {value}"
         )
-    return v
+    return value
