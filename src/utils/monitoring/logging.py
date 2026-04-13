@@ -5,7 +5,7 @@ import sys
 from typing import cast
 
 import structlog
-from pydantic import ValidationError
+from fastapi.exceptions import RequestValidationError
 from structlog.contextvars import merge_contextvars
 from structlog.dev import ConsoleRenderer
 from structlog.processors import (
@@ -78,8 +78,8 @@ def get_logger(name: str) -> BoundLogger:
     return cast(BoundLogger, structlog.get_logger(name))
 
 
-def _decode_pydantic_error(exc: ValidationError) -> str:
-    """Flatten a ValidationError into compact field-level messages."""
+def _decode_pydantic_error(exc: RequestValidationError) -> str:
+    """Flatten a RequestValidationError into compact field-level messages."""
     decoded_errors: list[str] = []
     for error in exc.errors():
         location = ".".join(str(part) for part in error.get("loc", ()))

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from fastapi.security.base import SecurityBase
 
 from ...base.principal import Principal, Scope
 from ...base.provider import SecurityProvider
 from src.utils import get_logger
+from src.utils.exceptions.errors import ErrorCode, raise_http
 from .scheme import NoCredentialsScheme
 
 
@@ -41,9 +42,10 @@ class IpWhitelistProvider(SecurityProvider):
                 auth_method="ip",
                 reason="no_client",
             )
-            raise HTTPException(
-                status_code=401,
-                detail="Unable to determine client IP address"
+            raise_http(
+                401,
+                ErrorCode.unauthorised,
+                "Unable to determine client IP address",
             )
 
         host = request.client.host
@@ -55,9 +57,10 @@ class IpWhitelistProvider(SecurityProvider):
                 reason="ip_not_whitelisted",
                 ip=host,
             )
-            raise HTTPException(
-                status_code=403,
-                detail="IP address not authorized"
+            raise_http(
+                403,
+                ErrorCode.forbidden,
+                "IP address not authorized",
             )
 
         return Principal(

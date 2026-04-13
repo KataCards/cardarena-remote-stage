@@ -1,14 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from time import perf_counter
 from uuid import uuid4
 
 from fastapi import APIRouter, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 import uvicorn
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.responses import Response
-from structlog.contextvars import bind_contextvars, clear_contextvars
+from structlog.contextvars import bind_contextvars, unbind_contextvars
 
 from src.api.registry import KioskRegistry
 from src.api.routes.control import build_router as build_control_router
@@ -59,7 +61,7 @@ app = FastAPI(lifespan=_startup.build_lifespan())
 async def _http_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
-):
+) -> JSONResponse:
     return await http_exception_handler(request, exc)
 
 
@@ -67,7 +69,7 @@ async def _http_exception_handler(
 async def _validation_exception_handler(
     request: Request,
     exc: RequestValidationError,
-):
+) -> JSONResponse:
     return await validation_exception_handler(request, exc)
 
 
@@ -75,12 +77,15 @@ async def _validation_exception_handler(
 async def _unhandled_exception_handler(
     request: Request,
     exc: Exception,
-):
+) -> JSONResponse:
     return await unhandled_exception_handler(request, exc)
 
 
 @app.middleware("http")
-async def _request_logging_middleware(request: Request, call_next) -> Response:
+async def _request_logging_middleware(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
     bind_contextvars(request_id=str(uuid4()))
     started = perf_counter()
     response: Response | None = None
@@ -96,7 +101,7 @@ async def _request_logging_middleware(request: Request, call_next) -> Response:
             status_code=response.status_code if response is not None else 500,
             duration_ms=duration_ms,
         )
-        clear_contextvars()
+        unbind_contextvars("request_id")
 
 
 if _security_router is not None:

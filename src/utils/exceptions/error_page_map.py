@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 
+from ..monitoring import get_logger
 
-logger = logging.getLogger(__name__)
+
+logger = get_logger(__name__)
 
 
 def build_error_map(folder: str) -> tuple[dict[str, str], dict[int, str]]:
     """Build Playwright engine resources and HTTP status-to-resource mapping."""
     root = Path(folder)
     if not root.exists() or not root.is_dir():
-        logger.warning(
-            "Error pages directory is missing or not a directory: %s",
-            root,
-        )
+        logger.warning("error_pages_dir_missing", path=str(root))
         return {}, {}
 
     resources: dict[str, str] = {}

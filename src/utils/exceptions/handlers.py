@@ -12,6 +12,13 @@ from .errors import ErrorCode, ErrorResponse, _STATUS_TO_CODE
 logger = get_logger(__name__)
 
 
+def _request_log_fields(request: Request) -> dict[str, str]:
+    return {
+        "path": request.url.path,
+        "method": request.method,
+    }
+
+
 async def http_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
@@ -20,8 +27,7 @@ async def http_exception_handler(
     logger.warning(
         "http_exception",
         status_code=exc.status_code,
-        path=request.url.path,
-        method=request.method,
+        **_request_log_fields(request),
     )
 
     if isinstance(exc.detail, dict):
@@ -48,8 +54,7 @@ async def validation_exception_handler(
     logger.warning(
         "request_validation_failed",
         message=decoded,
-        path=request.url.path,
-        method=request.method,
+        **_request_log_fields(request),
     )
 
     return JSONResponse(status_code=422, content=content)
@@ -62,8 +67,7 @@ async def unhandled_exception_handler(
     """Render unexpected exceptions as generic internal error responses."""
     logger.error(
         "unhandled_exception",
-        path=request.url.path,
-        method=request.method,
+        **_request_log_fields(request),
         exc_info=True,
     )
     return JSONResponse(

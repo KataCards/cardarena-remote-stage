@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from fastapi.security import APIKeyHeader
 
 from ...base.principal import Principal
 from ...base.provider import SecurityProvider
 from src.utils import get_logger
+from src.utils.exceptions.errors import ErrorCode, raise_http
 from .repository import ApiKeyRepository
 from .utils import hash_key
 
@@ -45,7 +46,7 @@ class ApiKeyProvider(SecurityProvider):
                 auth_method="api_key",
                 reason="missing_credentials",
             )
-            raise HTTPException(status_code=401, detail="Missing API key")
+            raise_http(401, ErrorCode.unauthorised, "Missing API key")
 
         key_hash = hash_key(credentials, self._secret)
         record = self.repo.get_by_hash(key_hash)
@@ -55,7 +56,7 @@ class ApiKeyProvider(SecurityProvider):
                 auth_method="api_key",
                 reason="invalid_key",
             )
-            raise HTTPException(status_code=401, detail="Invalid API key")
+            raise_http(401, ErrorCode.unauthorised, "Invalid API key")
 
         if record.revoked:
             logger.warning(
@@ -64,7 +65,7 @@ class ApiKeyProvider(SecurityProvider):
                 reason="revoked",
                 key_name=record.id,
             )
-            raise HTTPException(status_code=401, detail="API key has been revoked")
+            raise_http(401, ErrorCode.unauthorised, "API key has been revoked")
 
         if record.expires_at is not None:
             now = datetime.now(timezone.utc)
@@ -75,7 +76,7 @@ class ApiKeyProvider(SecurityProvider):
                     reason="expired",
                     key_name=record.id,
                 )
-                raise HTTPException(status_code=401, detail="API key has expired")
+                raise_http(401, ErrorCode.unauthorised, "API key has expired")
 
         return Principal(
             id=f"apikey:{record.id}",

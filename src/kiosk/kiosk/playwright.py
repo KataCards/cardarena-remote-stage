@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 from pydantic import Field
-from structlog.contextvars import bind_contextvars, clear_contextvars
 
 from .base import Kiosk
 from ..controls.playwright import PlaywrightControls
@@ -57,8 +56,11 @@ class PlaywrightKiosk(Kiosk):
         await self._navigate_with_retry(self.default_page)
         await self._sync_current_url()
         self.is_running = True
-        bind_contextvars(kiosk_uuid=str(self.kiosk_id), kiosk_name=self.kiosk_name)
-        logger.info("kiosk_started")
+        logger.info(
+            "kiosk_started",
+            kiosk_uuid=str(self.kiosk_id),
+            kiosk_name=self.kiosk_name,
+        )
 
     async def stop(self) -> None:
         """Stop the kiosk."""
@@ -68,8 +70,11 @@ class PlaywrightKiosk(Kiosk):
         try:
             await self.engine.close()
         finally:
-            logger.info("kiosk_stopped")
-            clear_contextvars()
+            logger.info(
+                "kiosk_stopped",
+                kiosk_uuid=str(self.kiosk_id),
+                kiosk_name=self.kiosk_name,
+            )
 
     # -------------------------------------------------------------------------
     # Error Handling
