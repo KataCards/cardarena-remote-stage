@@ -23,12 +23,33 @@ async def http_exception_handler(
     request: Request,
     exc: StarletteHTTPException,
 ) -> JSONResponse:
-    """Render HTTP exceptions into the standard error response shape."""
-    logger.warning(
-        "http_exception",
-        status_code=exc.status_code,
-        **_request_log_fields(request),
-    )
+    """Render HTTP exceptions into the standard error response shape.
+    
+    Logs at appropriate severity: 5xx at ERROR, 401/403/404 at INFO, other 4xx at WARNING.
+    """
+    # Determine log level based on status code
+    status = exc.status_code
+    if status >= 500:
+        # Server errors are always logged at ERROR level
+        logger.error(
+            "http_exception",
+            status_code=status,
+            **_request_log_fields(request),
+        )
+    elif status in (401, 403, 404):
+        # Expected client errors logged at INFO (not noise)
+        logger.info(
+            "http_exception",
+            status_code=status,
+            **_request_log_fields(request),
+        )
+    else:
+        # Other 4xx errors logged at WARNING
+        logger.warning(
+            "http_exception",
+            status_code=status,
+            **_request_log_fields(request),
+        )
 
     if isinstance(exc.detail, dict):
         content = exc.detail
