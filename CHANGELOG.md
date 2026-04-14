@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.2.0-dev.2 (2026-04-14)
+
+### Features
+
+- Outsourced Middleware into its own file
+  ([`693cebe`](https://github.com/KataCards/cardarena-remote-stage/commit/693cebe466049fe2a1ca6ffd1741448bfb3fca3a))
+
+
 ## v0.2.0-dev.1 (2026-04-14)
 
 ### Bug Fixes
