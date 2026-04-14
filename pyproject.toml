@@ -54,7 +54,7 @@ members = []
 [tool.semantic_release]
 version_toml = ["pyproject.toml:project.version"]
 upload_to_pypi = false
-build_command = false
+build_command = ""
 commit_message = "chore(release): {version} [skip ci]"
 tag_format = "v{version}"
 
