@@ -8,20 +8,20 @@ This demo demonstrates:
 - Automatic page switching with timed intervals
 """
 
-from pathlib import Path
 import asyncio
 import sys
+from pathlib import Path
 
 # Add src directory to Python path
 src_path = Path(__file__).parent.parent.parent / "src"
 sys.path.insert(0, str(src_path))
 
-from kiosk.engine.playwright import PlaywrightEngine
-from kiosk.kiosk.playwright import PlaywrightKiosk
-
 
 async def main():
     """Run the extended kiosk demo."""
+    from kiosk.engine.playwright import PlaywrightEngine
+    from kiosk.kiosk.playwright import PlaywrightKiosk
+
     print("\n=== Running Extended Kiosk Demo (Full-Screen) ===\n")
 
     # Create the Playwright engine with full-screen launch args

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from src.api.registry import KioskRegistry
 from src.kiosk.kiosk.factory.base import KioskFactory
 from src.startup import KioskStartupService

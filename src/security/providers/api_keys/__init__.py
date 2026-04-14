@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """API Key authentication module.
 
 Provides database-backed API key authentication with:
@@ -9,6 +7,8 @@ Provides database-backed API key authentication with:
 - FastAPI router for admin endpoints
 - CLI for key management
 """
+
+from __future__ import annotations
 
 from .provider import ApiKeyProvider
 from .models import ApiKeyCreate, ApiKeyRecord, ApiKeyCreated
