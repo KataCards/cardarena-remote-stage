@@ -19,11 +19,18 @@ jobs:
       id-token: write
 
     steps:
+      - name: Generate App Token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.PSR_APP_ID }}
+          private-key: ${{ secrets.PSR_APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -37,4 +44,4 @@ jobs:
         id: release
         uses: python-semantic-release/python-semantic-release@v9
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
