@@ -50,6 +50,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Install Browser dependencies
+        run: uv run playwright install --with-deps
+
       - name: Run tests
         run: uv run pytest --maxfail=1 --disable-warnings -q
 

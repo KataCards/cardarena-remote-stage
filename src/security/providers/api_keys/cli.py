@@ -36,7 +36,7 @@ class ApiKeyCLI:
             try:
                 expires_at = datetime.fromisoformat(expires)
             except ValueError:
-                print(f"Error: Invalid date format. Use ISO 8601 (e.g., 2024-12-31T23:59:59)")
+                print("Error: Invalid date format. Use ISO 8601 (e.g., 2024-12-31T23:59:59)")
                 sys.exit(1)
 
         entry = ApiKeyCreate(name=name, scopes=scope_enums, expires_at=expires_at)
@@ -50,7 +50,7 @@ class ApiKeyCLI:
         print(f"  Scopes: {[s.value for s in result.scopes]}")
         if result.expires_at:
             print(f"  Expires: {result.expires_at.isoformat()}")
-        print(f"\n  Raw key (save this, it won't be shown again):")
+        print("\n  Raw key (save this, it won't be shown again):")
         print(f"  {result.raw_key}\n")
 
     def list_keys(self) -> None:
