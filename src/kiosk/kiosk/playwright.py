@@ -128,4 +128,5 @@ class PlaywrightKiosk(Kiosk):
         except RuntimeError:
             logger.error("operation_failed", operation="go_home")
             return False
+        await self._sync_current_url()
         return True
