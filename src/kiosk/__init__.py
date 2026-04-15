@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Kiosk - Production-ready browser automation framework.
 
@@ -15,6 +13,8 @@ Public API:
     - PlaywrightControls: Playwright-based browser controls implementation
     - PlaywrightKiosk: Playwright-based kiosk orchestration implementation
 """
+
+from __future__ import annotations
 
 from .controls import Controls, PlaywrightControls
 from .engine import Engine, PlaywrightEngine

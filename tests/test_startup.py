@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
-
 from src.api.registry import KioskRegistry
 from src.kiosk.kiosk.factory.base import KioskFactory
 from src.startup import KioskStartupService
@@ -33,7 +31,12 @@ async def test_lifespan_builds_and_registers_kiosk() -> None:
     mock_kiosk.stop = AsyncMock()
     factory.build.return_value = mock_kiosk
 
-    with patch("src.startup.get_settings", return_value=MagicMock()):
+    with (
+        patch("src.startup.get_settings", return_value=MagicMock()),
+        patch("src.startup.get_security_settings", return_value=MagicMock()),
+        patch("src.startup.check_app_config"),
+        patch("src.startup.check_security_config"),
+    ):
         async with service.build_lifespan()(MagicMock()):
             factory.build.assert_called_once()
             mock_kiosk.start.assert_awaited_once()
@@ -49,7 +52,12 @@ async def test_lifespan_stops_all_kiosks_on_exit() -> None:
     mock_kiosk.stop = AsyncMock()
     factory.build.return_value = mock_kiosk
 
-    with patch("src.startup.get_settings", return_value=MagicMock()):
+    with (
+        patch("src.startup.get_settings", return_value=MagicMock()),
+        patch("src.startup.get_security_settings", return_value=MagicMock()),
+        patch("src.startup.check_app_config"),
+        patch("src.startup.check_security_config"),
+    ):
         async with service.build_lifespan()(MagicMock()):
             pass
 

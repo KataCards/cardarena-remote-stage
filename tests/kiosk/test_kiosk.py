@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from uuid import UUID
 
-import pytest
 from pydantic import PrivateAttr
 
 from tests.kiosk.conftest import ConcreteControls, ConcreteEngine, ConcreteKiosk

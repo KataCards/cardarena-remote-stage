@@ -19,7 +19,7 @@ class SecuritySettings(BaseSettings):
     security_provider: str = "api_key"
     apikey_db_path: str = "./security.db"
     apikey_db_type: str = "sqlite"
-    apikey_secret: SecretStr
+    apikey_secret: SecretStr = SecretStr("")  # Optional: only required for api_key provider
     allowed_ips: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
     @field_validator("allowed_ips", mode="before")

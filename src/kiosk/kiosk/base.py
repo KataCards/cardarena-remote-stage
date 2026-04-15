@@ -9,7 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..controls.base import Controls
 from ..engine.base import Engine
-from src.utils import validate_url
+from src.utils import get_logger, validate_url
+
+
+logger = get_logger(__name__)
 
 
 class Kiosk(BaseModel, ABC):
@@ -146,8 +149,15 @@ class Kiosk(BaseModel, ABC):
         controls = self._require_controls()
         # This is the single whitelist enforcement point for kiosk navigation.
         if self.allowed_urls and url not in self.allowed_urls:
+            logger.warning(
+                "navigation_blocked",
+                url=url,
+                kiosk_uuid=str(self.kiosk_id),
+                kiosk_name=self.kiosk_name,
+            )
             return False
         if not await controls.navigate(url):
+            logger.error("navigation_failed", url=url)
             return False
         await self._sync_current_url()
         return True
@@ -155,6 +165,7 @@ class Kiosk(BaseModel, ABC):
     async def reload(self) -> bool:
         """Reload the current page."""
         if not await self._require_controls().reload():
+            logger.error("operation_failed", operation="reload")
             return False
         await self._sync_current_url()
         return True
@@ -162,6 +173,7 @@ class Kiosk(BaseModel, ABC):
     async def go_back(self) -> bool:
         """Navigate back in browser history."""
         if not await self._require_controls().go_back():
+            logger.error("operation_failed", operation="go_back")
             return False
         await self._sync_current_url()
         return True
@@ -169,6 +181,7 @@ class Kiosk(BaseModel, ABC):
     async def go_forward(self) -> bool:
         """Navigate forward in browser history."""
         if not await self._require_controls().go_forward():
+            logger.error("operation_failed", operation="go_forward")
             return False
         await self._sync_current_url()
         return True
@@ -184,11 +197,17 @@ class Kiosk(BaseModel, ABC):
 
     async def click(self, x: int, y: int) -> bool:
         """Click at the given coordinates."""
-        return await self._require_controls().click(x, y)
+        if not await self._require_controls().click(x, y):
+            logger.error("interaction_failed", operation="click")
+            return False
+        return True
 
     async def type_text(self, text: str) -> bool:
         """Type text into the focused element."""
-        return await self._require_controls().type_text(text)
+        if not await self._require_controls().type_text(text):
+            logger.error("interaction_failed", operation="type_text")
+            return False
+        return True
 
     async def scroll(
         self,
@@ -196,11 +215,17 @@ class Kiosk(BaseModel, ABC):
         amount: int,
     ) -> bool:
         """Scroll the page in the given direction."""
-        return await self._require_controls().scroll(direction, amount)
+        if not await self._require_controls().scroll(direction, amount):
+            logger.error("interaction_failed", operation="scroll")
+            return False
+        return True
 
     async def press_key(self, key: str) -> bool:
         """Press a keyboard key."""
-        return await self._require_controls().press_key(key)
+        if not await self._require_controls().press_key(key):
+            logger.error("interaction_failed", operation="press_key")
+            return False
+        return True
 
     # -------------------------------------------------------------------------
     # Waiting Methods

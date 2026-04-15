@@ -1,11 +1,11 @@
 """Unit and E2E tests for PlaywrightKiosk."""
 from __future__ import annotations
 
-import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, patch  # AsyncMock used for asyncio.sleep patch
 
 import pytest
+from structlog.testing import capture_logs
 
 from pydantic import PrivateAttr
 
@@ -97,6 +97,24 @@ async def test_navigate_with_retry_raises_after_exhausting_retries(
     assert controls._navigate_calls == 3
 
 
+async def test_go_home_syncs_current_url_after_navigation(
+    mock_pw_engine: PlaywrightEngine,
+) -> None:
+    kiosk = PlaywrightKiosk(
+        engine=mock_pw_engine,
+        default_page="https://home.example",
+        kiosk_name="test",
+    )
+    kiosk.controls = PlaywrightControls(engine=mock_pw_engine)
+    kiosk.current_url = "https://stale.example"
+    mock_pw_engine._require_page().url = "https://home.example"
+
+    result = await kiosk.go_home()
+
+    assert result is True
+    assert kiosk.current_url == "https://home.example"
+
+
 # ---------------------------------------------------------------------------
 # Unit — _on_error
 # ---------------------------------------------------------------------------
@@ -108,15 +126,19 @@ async def test_on_error_silently_ignores_if_no_controls(tmp_html: Path) -> None:
 
 
 async def test_on_error_logs_when_error_page_navigation_fails(
-    tmp_html: Path, caplog: pytest.LogCaptureFixture
+    tmp_html: Path,
 ) -> None:
     kiosk = _kiosk(tmp_html)
     kiosk.controls = RaisingControls(engine=kiosk.engine)
 
-    with caplog.at_level(logging.ERROR):
+    with capture_logs() as captured:
         await kiosk._on_error(404)
 
-    assert "Failed to navigate to error page for code 404" in caplog.text
+    assert any(
+        entry.get("event") == "error_page_navigation_failed"
+        and entry.get("error_code") == 404
+        for entry in captured
+    )
 
 
 # ---------------------------------------------------------------------------
