@@ -97,6 +97,24 @@ async def test_navigate_with_retry_raises_after_exhausting_retries(
     assert controls._navigate_calls == 3
 
 
+async def test_go_home_syncs_current_url_after_navigation(
+    mock_pw_engine: PlaywrightEngine,
+) -> None:
+    kiosk = PlaywrightKiosk(
+        engine=mock_pw_engine,
+        default_page="https://home.example",
+        kiosk_name="test",
+    )
+    kiosk.controls = PlaywrightControls(engine=mock_pw_engine)
+    kiosk.current_url = "https://stale.example"
+    mock_pw_engine._require_page().url = "https://home.example"
+
+    result = await kiosk.go_home()
+
+    assert result is True
+    assert kiosk.current_url == "https://home.example"
+
+
 # ---------------------------------------------------------------------------
 # Unit — _on_error
 # ---------------------------------------------------------------------------
