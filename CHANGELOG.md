@@ -1,6 +1,18 @@
 # CHANGELOG
 
 
+## v0.2.0-dev.3 (2026-04-15)
+
+### Bug Fixes
+
+- Fixed no sync url bug in go_home function
+  ([`9bbca82`](https://github.com/KataCards/cardarena-remote-stage/commit/9bbca82dbee00afebd973298e6b76a5bfbbb3279))
+
+* fix: fixed bug in go_home function
+
+* chore: reomoved todo.txt
+
+
 ## v0.2.0-dev.2 (2026-04-14)
 
 ### Features
